@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  rl_project:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8050:8050"
+    tty: true  
