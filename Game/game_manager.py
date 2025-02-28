@@ -3,18 +3,18 @@ from Game.card import Card
 class GameManager:
 
     # On initialize
-    def __init__(self, deckCount):
-        self.availalbeCards = []
-        self.createDecks(deckCount=deckCount)
+    def __init__(self, deck_count):
+        self.availalbe_cards = []
+        self.create_decks(deck_count=deck_count)
 
         # For testing
-        for card in self.availalbeCards:
-            suit, value = card.getCard()
+        for card in self.availalbe_cards:
+            suit, value = card.get_card()
             print(f"Suit: {suit}, Value: {value}")
 
 
-    def createDecks(self, deckCount):
-        for i in range(deckCount):
+    def create_decks(self, deck_count):
+        for i in range(deck_count):
             for suit in ["S", "D", "C", "H"]:
-                self.availalbeCards.extend(Card(suit, n+1) for n in range(13))
+                self.availalbe_cards.extend(Card(suit, n+1) for n in range(13))
             return
