@@ -9,7 +9,7 @@ class Suit(Enum):
 class Card:
     def __init__(self, suit, value):
         self.suit = suit
-        self.value = value
+        self.value = value # 1 = Ace, 2-10 = respective card values, 11-13 = Jack, Queen and King respectively
         return
 
     def get_card(self):
