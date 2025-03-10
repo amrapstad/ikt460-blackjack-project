@@ -6,6 +6,7 @@ class Hand:
         self.possible_values = [] # Array of possible values a hand can be (because of ace)
         self.calculate_hand_values()
         self.stake = initial_bet
+        self.insurance_stake = 0
 
     def hit(self, available_cards):
         if self.is_standing:
@@ -54,11 +55,13 @@ class Hand:
         new_hand.hit(available_cards)
         return new_hand
 
-    def insurance(self):
-        # Logic for taking insurance
-        # TODO: Implement insurance
+    # True = Take insurance, False = Remove insurance
+    def insurance(self, insurance_direction):
+        if insurance_direction:
+            self.insurance_stake = int(self.stake / 2)
+        else:
+            self.insurance_stake = 0
 
-        
         return
 
     def get_hand_cards(self):
