@@ -1,4 +1,4 @@
-# ikt460-reinforcement-learning-project
+# ikt460-blackjack-project
 IKT460 - Reinforcement Learning Project
 
 # How to use Docker
