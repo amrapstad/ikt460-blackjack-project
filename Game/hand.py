@@ -67,6 +67,9 @@ class Hand:
     def get_hand_cards(self):
         return self.hand_cards
 
+    def get_possible_values(self):
+        return self.possible_values
+
     def calculate_hand_values(self):
         total_values = [0]
 
