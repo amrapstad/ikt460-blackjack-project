@@ -6,10 +6,11 @@ class Dealer:
         self.dealer_cards = []
         self.possible_values = []
         self.calculate_hand_values()
+
         return
 
-    def hit(self, availalbe_cards):
-        hit_card = availalbe_cards.pop()
+    def hit(self, available_cards):
+        hit_card = available_cards.pop()
         self.dealer_cards.append(hit_card)
         self.calculate_hand_values()
         return hit_card
@@ -18,8 +19,12 @@ class Dealer:
         return
 
     def get_dealer_cards(self):
+        return self.dealer_cards
+        
+    def get_possible_values(self):
         self.calculate_hand_values()
         return self.possible_values
+
 
     def calculate_hand_values(self):
         total_values = [0]
@@ -36,7 +41,6 @@ class Dealer:
 
             # ACE: Add 1 to all possible total values of hand, and add a new entry with the highest of the values + 11
             max_value = max(total_values)
-            print("Test")
             for i in range(len(total_values)):
                 total_values[i] += 1
             total_values.append(max_value + 11)
