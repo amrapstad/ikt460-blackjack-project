@@ -1,6 +1,7 @@
 from Game.card import Card
 import random
 
+
 class Dealer:
     def __init__(self):
         self.dealer_cards = []
@@ -20,17 +21,16 @@ class Dealer:
 
     def get_dealer_cards(self):
         return self.dealer_cards
-        
+
     def get_possible_values(self):
         self.calculate_hand_values()
         return self.possible_values
-
 
     def calculate_hand_values(self):
         total_values = [0]
         for card in self.dealer_cards:
             # Get last element which is the card value
-            card_value = card.get_card()[-1] 
+            card_value = card.get_card()[-1]
 
             # NOT ACE: Simply add card value to all possible total values of hand
             if card_value > 1:
@@ -47,3 +47,35 @@ class Dealer:
 
         self.possible_values = total_values
         return
+
+    # Maybe change this name?
+    def deal_algorithm(self, available_cards):
+        # Update hand and its values
+        self.calculate_hand_values()
+        ace_present = len(self.possible_values) > 1
+        play_value = self.calculate_play_value() # The value being used to determine the final score
+
+        # If max is below 17 or is 17 with an ace, hit. Else stand
+        while play_value < 17 or (play_value == 17 and ace_present):
+            self.hit(available_cards) # Hit to get new card
+
+            # Then update hand and values
+            self.calculate_hand_values()
+            ace_present = len(self.possible_values) > 1
+            play_value = self.calculate_play_value()
+
+        final_value = play_value
+        final_hand = self.dealer_cards
+
+        return
+
+    def calculate_play_value(self):
+        number_of_values = len(self.possible_values)
+        index = number_of_values - 1
+        play_value = self.possible_values[index]
+
+        while index > 0 and play_value > 21:
+            index -= 1
+            play_value = self.possible_values[index]
+
+        return play_value
