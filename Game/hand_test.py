@@ -30,7 +30,7 @@ def test_for_hitting():
 
 # Test for splitting
 def test_for_splitting():
-    deck = [Card(Suit.CLUBS, 10), Card(Suit.HEARTS, 2), Card(Suit.DIAMONDS, 7), Card(Suit.SPADES, 7), Card(Suit.DIAMONDS, 9), Card(Suit.CLUBS, 9)]
+    deck = [Card(Suit.CLUBS, 10), Card(Suit.HEARTS, 2), Card(Suit.DIAMONDS, 7), Card(Suit.SPADES, 7), Card(Suit.DIAMONDS, 10), Card(Suit.CLUBS, 12)]
     hand_1 = Hand([])
     
     print("Available cards before:")
@@ -41,6 +41,11 @@ def test_for_splitting():
     print("\nHitting two times...")
     hand_1.hit(deck)
     hand_1.hit(deck)
+
+    print("\nCurrent hand:")
+    for i in range(len(hand_1.get_hand_cards())):
+        suit, value = hand_1.get_hand_cards()[i].get_card()
+        print(f"Card {i}: {suit.name}, {value}")
 
     print("\nSplitting current hand...")
     hand_2 = hand_1.split(deck)
@@ -76,5 +81,5 @@ def test_for_hand_values():
     return
 
 # test_for_hitting()
-# test_for_splitting()
+test_for_splitting()
 # test_for_hand_values()
