@@ -50,12 +50,18 @@ class Dealer:
 
     # Maybe change this name?
     def deal_algorithm(self, available_cards):
+        """
+        Performs the predefined dealer actions when dealing to itself.
+
+        :param available_cards: Card array. The deck used in this round of Blackjack.
+        :return: Dictionary (int: Card array). Group of the final value and the final hand after deal algorithm.
+        """
         # Update hand and its values
         self.calculate_hand_values()
         ace_present = len(self.possible_values) > 1
         play_value = self.calculate_play_value() # The value being used to determine the final score
 
-        # If max is below 17 or is 17 with an ace, hit. Else stand
+        # If play value is below 17 or is 17 with an ace, hit. Else stand
         while play_value < 17 or (play_value == 17 and ace_present):
             self.hit(available_cards) # Hit to get new card
 
@@ -66,8 +72,9 @@ class Dealer:
 
         final_value = play_value
         final_hand = self.dealer_cards
+        final = { final_value: final_hand} # Dictionary. Key --> hand value, Value --> card array
 
-        return
+        return final
 
     def calculate_play_value(self):
         number_of_values = len(self.possible_values)
