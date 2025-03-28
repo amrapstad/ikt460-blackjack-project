@@ -41,7 +41,7 @@ class Hand:
             raise Exception("Hit not allowed on standing hand!")
         elif len(self.hand_cards) != 2:
             raise Exception(f"Split not allowed on hand with {len(self.hand_cards)} cards!")
-        elif self.hand_cards[0].value != self.hand_cards[1].value:
+        elif min(self.hand_cards[0].value, 10) != min(self.hand_cards[1].value, 10): # Split also works on different 10-valued cards (e.g. Jack and Queen)
             raise Exception("Split not allowed on cards of non-equal value")
 
         # Split two cards into two separate hands
