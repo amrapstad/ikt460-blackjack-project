@@ -5,10 +5,21 @@ import random
 class Dealer:
     def __init__(self):
         self.dealer_cards = []
+        self.face_up_card = None
         self.possible_values = []
         self.calculate_hand_values()
 
-        return
+    # Get two cards for the initial hand and make the first card dealt the face up card
+    def initial_hand(self, available_cards):
+        face_up_card = available_cards.pop()
+        hole_card = available_cards.pop()
+
+        self.face_up_card = face_up_card
+
+        self.dealer_cards.append(face_up_card)
+        self.dealer_cards.append(hole_card)
+
+        self.calculate_hand_values()
 
     def hit(self, available_cards):
         hit_card = available_cards.pop()
@@ -21,6 +32,9 @@ class Dealer:
 
     def get_dealer_cards(self):
         return self.dealer_cards
+
+    def get_face_up_card(self):
+        return self.face_up_card
 
     def get_possible_values(self):
         self.calculate_hand_values()
