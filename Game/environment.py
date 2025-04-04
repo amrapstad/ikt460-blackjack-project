@@ -1,6 +1,6 @@
 from Game.game_manager import GameManager
 
-class Enviroment:
+class Environment:
     def __init__(self, deck_count):
         self.game_manager = GameManager(deck_count=deck_count)
 

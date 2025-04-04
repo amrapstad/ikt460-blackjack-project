@@ -1,8 +1,8 @@
-from Game.enviroment import Enviroment
+from Game.environment import Environment
 from Game.dealer import Dealer
 from Game.card import Card, Suit
 
-environment = Enviroment(deck_count=1)
+environment = Environment(deck_count=1)
 
 def print_environment_state():
     print("### Players ###")
