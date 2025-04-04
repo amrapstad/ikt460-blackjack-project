@@ -10,6 +10,7 @@ def print_environment_state():
         print(f'- Player {player_index+1}')
         for hand_index, hand in enumerate(player.get_hands()):
             print(f'    - Hand #{hand_index+1}')
+            print(f'        STANDING: {hand.is_standing}')
             for card in hand.hand_cards:
                 print(f'        {card.suit}, Value: {card.value}')
             print(f'        Possible values: {hand.possible_values}')
@@ -19,15 +20,22 @@ def print_environment_state():
             print(f'    {card.suit}, Value: {card.value}')
     print(f'    Possible values: {environment.get_game_manager().get_dealer().possible_values}')
     print("### Overviews ###")
-    print(f'Total available cards: {len(environment.get_game_manager().get_available_cards())}')
+    print(f'Total available cards: {len(environment.get_game_manager().get_available_cards())}\n')
 
 #Test
 def moves():
     for player_index, player in enumerate(environment.get_game_manager().get_players()):
         for hand_index, hand in enumerate(player.get_hands()):
-            if min(10, hand.hand_cards[0].value) == min(10, hand.hand_cards[1].value):
-                player.action_input(hand_index, 3, environment.get_game_manager().get_available_cards())
+            if min(10, hand.get_hand_cards()[0].value) == min(10, hand.get_hand_cards()[1].value):
+                environment.input(player_index, hand_index, 3)
+                environment.input(player_index, hand_index, 0)
+            else:
+                environment.input(player_index, hand_index, 1)
+                environment.input(player_index, hand_index, 0)
 
+def split_rec():
+     if min(10, hand.get_hand_cards()[0].value) == min(10, hand.get_hand_cards()[1].value):
+        environment.input(player_index, hand_index, 3)
 
 print_environment_state()
 moves()
