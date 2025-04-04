@@ -26,7 +26,7 @@ def print_environment_state():
 def moves():
     for player_index, player in enumerate(environment.game_manager.players):
         for hand_index, hand in enumerate(player.hands):
-            if min(10, hand.hand_cards[0].value) == min(10, hand.ghand_cards[1].value):
+            if min(10, hand.hand_cards[0].value) == min(10, hand.hand_cards[1].value):
                 environment.input(player_index, hand_index, 3)
                 environment.input(player_index, hand_index, 0)
             else:
