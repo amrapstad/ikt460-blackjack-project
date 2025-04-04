@@ -22,7 +22,7 @@ def face_up_test():
 
     dealer = Dealer()
     dealer.initial_hand(deck)
-    face_up = dealer.get_face_up_card().get_card()
+    face_up = dealer.face_up_card.get_card()
     print("Dealer hand:")
     print(f"- Card 1: {face_up[0].name}, {face_up[1]}")
     print("- Card 2: ?")

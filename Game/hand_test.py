@@ -22,8 +22,8 @@ def test_for_hitting():
         print(f"Card {i}: {suit.name}, {value}")
     
     print("\nFinal hand:")
-    for i in range(len(current_hand.get_hand_cards())):
-        suit, value = current_hand.get_hand_cards()[i].get_card()
+    for i in range(len(current_hand.hand_cards)):
+        suit, value = current_hand.hand_cards[i].get_card()
         print(f"Card {i}: {suit.name}, {value}")
     
     return
@@ -43,8 +43,8 @@ def test_for_splitting():
     hand_1.hit(deck)
 
     print("\nCurrent hand:")
-    for i in range(len(hand_1.get_hand_cards())):
-        suit, value = hand_1.get_hand_cards()[i].get_card()
+    for i in range(len(hand_1.hand_cards)):
+        suit, value = hand_1.hand_cards[i].get_card()
         print(f"Card {i}: {suit.name}, {value}")
 
     print("\nSplitting current hand...")
@@ -56,13 +56,13 @@ def test_for_splitting():
         print(f"Card {i}: {suit.name}, {value}")
     
     print("\nFinal hand 1:")
-    for i in range(len(hand_1.get_hand_cards())):
-        suit, value = hand_1.get_hand_cards()[i].get_card()
+    for i in range(len(hand_1.hand_cards)):
+        suit, value = hand_1.hand_cards[i].get_card()
         print(f"Card {i}: {suit.name}, {value}")
     
     print("\nFinal hand 2:")
-    for i in range(len(hand_2.get_hand_cards())):
-        suit, value = hand_2.get_hand_cards()[i].get_card()
+    for i in range(len(hand_2.hand_cards)):
+        suit, value = hand_2.hand_cards[i].get_card()
         print(f"Card {i}: {suit.name}, {value}")
     
     return
@@ -72,8 +72,8 @@ def test_for_hand_values():
     hand = Hand([Card(Suit.CLUBS, 9), Card(Suit.HEARTS, 1), Card(Suit.SPADES, 1), Card(Suit.CLUBS, 2)])
 
     print("\nHand:")
-    for i in range(len(hand.get_hand_cards())):
-        suit, value = hand.get_hand_cards()[i].get_card()
+    for i in range(len(hand.hand_cards)):
+        suit, value = hand.hand_cards[i].get_card()
         print(f"Card {i}: {suit.name}, {value}")
 
     print(hand.possible_values)
@@ -81,5 +81,5 @@ def test_for_hand_values():
     return
 
 # test_for_hitting()
-test_for_splitting()
-# test_for_hand_values()
+# test_for_splitting()
+test_for_hand_values()
