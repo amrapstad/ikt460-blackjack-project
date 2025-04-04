@@ -39,12 +39,6 @@ class Dealer:
         self.calculate_hand_values()
         return self.possible_values
 
-    def get_dealer_cards(self):
-        return self.dealer_cards
-
-    def get_face_up_card(self):
-        return self.face_up_card
-
     def calculate_hand_values(self):
         total_values = [0]
         for card in self.dealer_cards:

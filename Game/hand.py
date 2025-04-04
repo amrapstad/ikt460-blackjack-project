@@ -68,15 +68,6 @@ class Hand:
 
         return
 
-    def get_hand_cards(self):
-        return self.hand_cards
-
-    def get_possible_values(self):
-        return self.possible_values
-
-    def get_hand_stake(self):
-        return self.stake
-
     def calculate_hand_values(self):
         total_values = [0]
 
