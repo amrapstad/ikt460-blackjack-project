@@ -1,12 +1,12 @@
-from Game.card import Card
-import random
-
-
 class Dealer:
     def __init__(self):
         self.dealer_cards = []
-        self.face_up_card = None
         self.possible_values = []
+        self.face_up_card = None
+
+        self.busted_hand = False
+        self.is_standing = False
+
         self.calculate_hand_values()
 
     # Get two cards for the initial hand and make the first card dealt the face up card
@@ -22,23 +22,28 @@ class Dealer:
         self.calculate_hand_values()
 
     def hit(self, available_cards):
+        if self.is_standing:
+            raise Exception("Hit not allowed on standing hand")
+
         hit_card = available_cards.pop()
         self.dealer_cards.append(hit_card)
         self.calculate_hand_values()
         return hit_card
 
     def stand(self):
+        self.is_standing = True
+        self.calculate_hand_values()
         return
+
+    def get_possible_values(self):
+        self.calculate_hand_values()
+        return self.possible_values
 
     def get_dealer_cards(self):
         return self.dealer_cards
 
     def get_face_up_card(self):
         return self.face_up_card
-
-    def get_possible_values(self):
-        self.calculate_hand_values()
-        return self.possible_values
 
     def calculate_hand_values(self):
         total_values = [0]
@@ -58,6 +63,10 @@ class Dealer:
             for i in range(len(total_values)):
                 total_values[i] += 1
             total_values.append(max_value + 11)
+
+        # Check for busted hand by checking the lowest hand value
+        if min(total_values) > 21:
+            self.busted_hand = True
 
         self.possible_values = total_values
         return

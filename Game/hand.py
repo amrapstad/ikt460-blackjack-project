@@ -1,12 +1,16 @@
 class Hand:
     def __init__(self, hand_cards, initial_bet = 0):
         self.hand_cards = hand_cards # Array of cards
-        self.insurance = False
-        self.is_standing = False
         self.possible_values = [] # Array of possible values a hand can be (because of ace)
-        self.calculate_hand_values()
-        self.stake = initial_bet
+
+        self.busted_hand = False
+        self.is_standing = False
+
+        self.insurance = False
         self.insurance_stake = 0
+        self.stake = initial_bet
+
+        self.calculate_hand_values()
 
     def hit(self, available_cards):
         if self.is_standing:
@@ -91,6 +95,11 @@ class Hand:
             for i in range(len(total_values)):
                 total_values[i] += 1
             total_values.append(max_value + 11)
+
+        # Check for busted hand by checking the lowest hand value
+        if min(total_values) > 21:
+            self.busted_hand = True
+            self.is_standing = True
 
         self.possible_values = total_values
         return
