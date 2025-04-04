@@ -21,6 +21,10 @@ class Dealer:
 
         self.calculate_hand_values()
 
+    def get_possible_values(self):
+        self.calculate_hand_values()
+        return self.possible_values
+
     def hit(self, available_cards):
         if self.is_standing:
             raise Exception("Hit not allowed on standing hand")
@@ -34,10 +38,6 @@ class Dealer:
         self.is_standing = True
         self.calculate_hand_values()
         return
-
-    def get_possible_values(self):
-        self.calculate_hand_values()
-        return self.possible_values
 
     def calculate_hand_values(self):
         total_values = [0]

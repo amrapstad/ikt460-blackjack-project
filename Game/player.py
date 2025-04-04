@@ -24,7 +24,4 @@ class Player:
             self.hands.append(new_hand)
         if action == 4:        
             self.hands[hand].insurance()
-        return 
-
-    def get_hands(self):
-        return self.hands
+        return

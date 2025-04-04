@@ -12,6 +12,10 @@ class Hand:
 
         self.calculate_hand_values()
 
+    def get_possible_values(self):
+        self.calculate_hand_values()
+        return self.possible_values
+
     def hit(self, available_cards):
         if self.is_standing:
             raise Exception("Hit not allowed on standing hand")

@@ -76,7 +76,7 @@ def test_for_hand_values():
         suit, value = hand.hand_cards[i].get_card()
         print(f"Card {i}: {suit.name}, {value}")
 
-    print(hand.possible_values)
+    print(hand.get_possible_values())
 
     return
 

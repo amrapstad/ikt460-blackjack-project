@@ -34,15 +34,6 @@ class GameManager:
 
         self.check_blackjack_win()
         return
-
-    def get_dealer(self):
-        return self.dealer
-
-    def get_available_cards(self):
-        return self.available_cards
-
-    def get_players(self):
-        return self.players
     
     def create_decks(self, deck_count):
         for i in range(deck_count):
@@ -60,8 +51,8 @@ class GameManager:
 
     def check_blackjack_win(self):
         for player_index, player in enumerate(self.players):
-            for hand_index, hand in enumerate(player.get_hands()):
-                if self.blackjack(hand.get_possible_values(), hand.get_hand_cards()) and self.blackjack(self.dealer.get_possible_values(), self.dealer.get_dealer_cards()) is False:
+            for hand_index, hand in enumerate(player.hands):
+                if self.blackjack(hand.get_possible_values(), hand.hand_cards) and self.blackjack(self.dealer.get_possible_values(), self.dealer.dealer_cards) is False:
                     print(f'WINNER: Player #{player_index+1} with hand #{hand_index+1} wins with blackjack!')
                     continue
 
@@ -69,7 +60,7 @@ class GameManager:
     def check_busted(self):
         # Check if player or dealer are busted (over 21) and return loser
         for player_index, player in enumerate(self.players):
-            for hand_index, hand in enumerate(player.get_hands()):
+            for hand_index, hand in enumerate(player.hands):
                 if min(hand.get_possible_values()) > 21:
                     print(f'Busted: Player #{player_index+1} with hand #{hand_index+1} busted!')
                     continue
@@ -78,7 +69,7 @@ class GameManager:
     def check_winner(self):
         # Check all max(possible_values) that is not higher than 21 for each hand for each player to see which hand won against dealer card values
         for player_index, player in enumerate(self.players):
-            for hand_index, hand in enumerate(player.get_hands()):
+            for hand_index, hand in enumerate(player.hands):
                 # Highest valid value for the player (<= 21)
                 player_max_valid = max((value for value in hand.get_possible_values() if value <= 21), default=None)
 
@@ -107,7 +98,7 @@ class GameManager:
     def play_episode(self, player_index, hand_index, action):
 
         print(f'INPUT: Player #{player_index+1} does action #{action} on hand #{hand_index+1}')
-        self.get_players()[player_index].action_input(hand_index, action, self.get_available_cards())
+        self.players[player_index].action_input(hand_index, action, self.available_cards)
 
         # Check if player hand is blackjack (21) and dealer hand is not blackjack (21)
         self.check_blackjack_win()
@@ -117,7 +108,7 @@ class GameManager:
 
         # Check if all hand for each player is is_standing
         for player_index, player in enumerate(self.players):
-            for hand_index, hand in enumerate(player.get_hands()):
+            for hand_index, hand in enumerate(player.hands):
                 if hand.is_standing is False:
                     return False
         
@@ -131,4 +122,3 @@ class GameManager:
             return True
 
         self.check_winner()
-        
