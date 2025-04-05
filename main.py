@@ -15,7 +15,7 @@ def print_environment_state():
                 print(f'        {card.suit}, Value: {card.value}')
             print(f'        Possible values: {hand.get_possible_values()}')
             print(f'        Hand stake: {hand.stake}')
-            print('### Dealer ###')
+    print('### Dealer ###')
     for card in environment.game_manager.dealer.dealer_cards:
             print(f'    {card.suit}, Value: {card.value}')
     print(f'    Possible values: {environment.game_manager.dealer.get_possible_values()}')
@@ -32,7 +32,5 @@ def moves():
             else:
                 environment.input(player_index, hand_index, 1)
                 environment.input(player_index, hand_index, 0)
-
-print_environment_state()
 moves()
 print_environment_state()

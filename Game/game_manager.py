@@ -11,7 +11,6 @@ class GameManager:
         self.players = []
         self.available_cards = []
         self.dealer = Dealer()
-        self.history = []
 
         # Sets up initial game setup, i.e Dealer gets 2 cards and player(s) get 2 cards
         self.initial_setup(deck_count)
@@ -58,9 +57,18 @@ class GameManager:
                 dealer_max_valid = max((value for value in self.dealer.get_possible_values() if value <= 21), default=0)
 
                 # If player hand is busted (no valid hand <= 21)
-                if player_max_valid is 0:
+                if player_max_valid == 0:
                     print(f'Busted: Player #{player_index+1} with hand #{hand_index+1} with minimum value {min(hand.get_possible_values())} lost!')
-                    continue
+                    # Check if all hand for each player is busted
+                    for player_index, player in enumerate(self.players):
+                        for hand_index, hand in enumerate(player.hands):
+                            if hand.busted_hand is False:
+                                continue
+                    return
+
+                if dealer_max_valid == 0:
+                    print('LOSER: Dealer busted!')
+                    return True
 
                 # Compare the max valid values
                 if player_max_valid > dealer_max_valid:
@@ -75,20 +83,7 @@ class GameManager:
                 elif player_max_valid == dealer_max_valid:
                     print(f'TIE: Player #{player_index+1} with hand #{hand_index+1} ties with dealer!')
                     continue
-
-                # Check if all hand for each player is busted
-                for player_index, player in enumerate(self.players):
-                    for hand_index, hand in enumerate(player.hands):
-                        if hand.busted_hand is False:
-                            continue
-
-                if dealer_max_valid is 0:
-                    print('LOSER: Dealer busted!')
-                    return True
-
-                print(f'All players hands are busted, Dealer wins!')
-            
-        return False
+        return
 
     def play_episode(self, player_index, hand_index, action):
 
