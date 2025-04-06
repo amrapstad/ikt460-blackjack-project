@@ -28,15 +28,13 @@ class GameManager:
         self.players.append(new_player)
 
         # Initial 2 cards for dealer
-        for i in range(2):
-            self.dealer.hit(self.available_cards)
-        return
+        self.dealer.initial_hand(self.available_cards)
     
     def create_decks(self, deck_count):
         for i in range(deck_count):
             for suit in [1, 2, 3, 4]:
                 self.available_cards.extend(Card(Suit(suit), n+1) for n in range(13))
-            return
+        return
         
     def shuffle(self):
         random.shuffle(self.available_cards)
@@ -73,20 +71,21 @@ class GameManager:
                 # Compare the max valid values
                 if player_max_valid > dealer_max_valid:
                     if self.blackjack(hand.get_possible_values(), hand.hand_cards) and self.blackjack(self.dealer.get_possible_values(), self.dealer.dealer_cards) is False:
-                        print(f'WINNER: Player #{player_index+1} with hand #{hand_index+1} wins with blackjack!')
+                        print(f'WINNER: Player #{player_index+1} with hand #{hand_index+1} wins with blackjack, Dealer has {dealer_max_valid}!')
                         continue
-                    print(f'WINNER: Player #{player_index+1} with hand #{hand_index+1} wins!')
+                    print(f'WINNER: Player #{player_index+1} with hand #{hand_index+1} wins, Dealer has {dealer_max_valid}!')
                     continue
                 elif player_max_valid < dealer_max_valid:
-                    print(f'LOSER: Player #{player_index+1} with hand #{hand_index+1} lost!')
+                    print(f'LOSER: Player #{player_index+1} with hand #{hand_index+1} lost, Dealer has {dealer_max_valid}!')
                     continue
                 elif player_max_valid == dealer_max_valid:
                     print(f'TIE: Player #{player_index+1} with hand #{hand_index+1} ties with dealer!')
                     continue
-        return
+        return True
 
     def play_episode(self, player_index, hand_index, action):
 
+        print("")
         if (self.players[player_index].hands[hand_index].busted_hand is False):
             print(f'INPUT: Player #{player_index+1} does action #{action} on hand #{hand_index+1}')
             self.players[player_index].action_input(hand_index, action, self.available_cards)
