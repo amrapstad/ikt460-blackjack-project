@@ -82,4 +82,4 @@ def test_for_hand_values():
 
 # test_for_hitting()
 # test_for_splitting()
-test_for_hand_values()
+# test_for_hand_values()

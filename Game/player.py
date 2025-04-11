@@ -25,3 +25,11 @@ class Player:
         if action == 4:        
             self.hands[hand].insurance()
         return
+
+"""
+0 - Stand
+1 - Hit
+2 - Double down
+3 - Split
+4 - Insurance
+"""

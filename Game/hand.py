@@ -10,6 +10,8 @@ class Hand:
         self.insurance_stake = 0
         self.stake = initial_bet
 
+        self.hand_history = []
+
         self.calculate_hand_values()
 
     def get_possible_values(self):
@@ -98,3 +100,7 @@ class Hand:
 
         self.possible_values = total_values
         return
+
+    def add_to_history(self, cards, stake, next_action):
+        new_entry = (cards, stake, next_action)
+        self.hand_history.append(new_entry)
