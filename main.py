@@ -42,23 +42,6 @@ def print_environment_state_player_view(environment):
     print("### Overviews ###")
     print(f'Total available cards: {len(environment.game_manager.available_cards)}')
 
-#Test
-"""def moves():
-    for player_index, player in enumerate(environment.game_manager.players):
-        for hand_index, hand in enumerate(player.hands):
-            if min(10, hand.hand_cards[0].value) == min(10, hand.hand_cards[1].value):
-                environment.input(player_index, hand_index, action=3)
-                environment.input(player_index, hand_index, action=0)
-            else:
-<<<<<<< Updated upstream
-                environment.input(player_index, hand_index, 1)
-                environment.input(player_index, hand_index, 0)
-moves()
-print_environment_state()
-=======
-                environment.input(player_index, hand_index, action=1)
-                environment.input(player_index, hand_index, action=0)"""
-
 def loop():
     print("Welcome to the Blackjack game!")
     deck_count = int(input("Enter number of decks: "))
@@ -89,10 +72,9 @@ def loop():
                     print_environment_state_player_view(environment)
                     continue
                 environment.input(player_index, hand_index, action=action)
-                if action == 0:
+                if action == 0 or 2:
                     break
     print("Game over.")
     return
 
 loop()
->>>>>>> Stashed changes
