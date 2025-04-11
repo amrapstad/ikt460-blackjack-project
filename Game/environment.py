@@ -9,4 +9,15 @@ class Environment:
 
     def input(self, player_index, hand_index, action):
         self.game_manager.play_episode(player_index, hand_index, action)
+        for player in self.game_manager.players:
+            for hand in player.hands:
+                if hand.is_standing is False:
+                    return
+            print(f'### Dealer Cards ###')
+        for card in self.game_manager.dealer.dealer_cards:
+            print(f'    {card.suit}, Value: {card.value}')
+        return
+    
+    def game_reset(self):
+        self.game_manager = GameManager(deck_count=deck_count)
         return
