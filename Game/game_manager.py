@@ -72,47 +72,42 @@ class GameManager:
         self.dealer.initial_hand(self.available_cards)
         
     def check_winner(self):
-        # Check all max(possible_values) that is not higher than 21 for each hand for each player to see which hand won against dealer card values
+        all_players_busted = True
+
         for player_index, player in enumerate(self.players):
             for hand_index, hand in enumerate(player.hands):
-                # Highest valid value for the player (<= 21)
-                player_max_valid = max((value for value in hand.get_possible_values() if value <= 21), default=0)
+                player_values = hand.get_possible_values()
+                dealer_values = self.dealer.get_possible_values()
 
-                # Highest valid value for the dealer (<= 21)
-                dealer_max_valid = max((value for value in self.dealer.get_possible_values() if value <= 21), default=0)
+                player_max_valid = max((v for v in player_values if v <= 21), default=0)
+                dealer_max_valid = max((v for v in dealer_values if v <= 21), default=0)
 
-                # Check if all hands for each player are busted
-                all_busted = True
-                for player in self.players:
-                    for hand in player.hands:
-                        if not hand.busted_hand:
-                            all_busted = False
-                            break
-                    if not all_busted:
-                        break
+                if player_max_valid == 0:
+                    print(f'BUSTED: Player #{player_index+1} Hand #{hand_index+1} busted with minimum value {min(player_values)}!')
+                    continue  # No point comparing busted hand
 
-                if all_busted:
-                    print("All players have busted. Round over!")
-                    return
+                all_players_busted = False  # At least one hand is valid
 
                 if dealer_max_valid == 0:
-                    print('LOSER: Dealer busted!')
-                    return True
+                    print(f'WINNER: Player #{player_index+1} Hand #{hand_index+1} wins because dealer busted!')
+                    continue
 
-                # Compare the max valid values
                 if player_max_valid > dealer_max_valid:
-                    if self.blackjack(hand.get_possible_values(), hand.hand_cards) and self.blackjack(self.dealer.get_possible_values(), self.dealer.dealer_cards) is False:
-                        print(f'WINNER: Player #{player_index+1} with hand #{hand_index+1} wins with blackjack, Dealer has {dealer_max_valid}!')
-                        continue
-                    print(f'WINNER: Player #{player_index+1} with hand #{hand_index+1} wins, Dealer has {dealer_max_valid}!')
-                    continue
+                    if self.blackjack(player_values, hand.hand_cards) and not self.blackjack(dealer_values, self.dealer.dealer_cards):
+                        print(f'BLACKJACK WIN: Player #{player_index+1} Hand #{hand_index+1} wins with Blackjack! Dealer has {dealer_max_valid}')
+                    else:
+                        print(f'WINNER: Player #{player_index+1} Hand #{hand_index+1} wins with {player_max_valid} against dealers {dealer_max_valid}')
                 elif player_max_valid < dealer_max_valid:
-                    print(f'LOSER: Player #{player_index+1} with hand #{hand_index+1} lost, Dealer has {dealer_max_valid}!')
-                    continue
-                elif player_max_valid == dealer_max_valid:
-                    print(f'TIE: Player #{player_index+1} with hand #{hand_index+1} ties with dealer!')
-                    continue
+                    print(f'LOSER: Player #{player_index+1} Hand #{hand_index+1} lost with {player_max_valid} vs dealers {dealer_max_valid}')
+                else:
+                    print(f'TIE: Player #{player_index+1} Hand #{hand_index+1} tied with the dealer at {player_max_valid}')
+
+        if all_players_busted:
+            print("ROUND OVER: All player hands busted. Dealer wins by default.")
+            return False
+
         return True
+
 
     def create_histyory_output():
         for player_index, player in enumerate(self.players):
