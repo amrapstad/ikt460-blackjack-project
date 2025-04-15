@@ -81,14 +81,18 @@ class GameManager:
                 # Highest valid value for the dealer (<= 21)
                 dealer_max_valid = max((value for value in self.dealer.get_possible_values() if value <= 21), default=0)
 
-                # If player hand is busted (no valid hand <= 21)
-                if player_max_valid == 0:
-                    print(f'Busted: Player #{player_index+1} with hand #{hand_index+1} with minimum value {min(hand.get_possible_values())} lost!')
-                    # Check if all hand for each player is busted
-                    for player_index, player in enumerate(self.players):
-                        for hand_index, hand in enumerate(player.hands):
-                            if hand.busted_hand is False:
-                                continue
+                # Check if all hands for each player are busted
+                all_busted = True
+                for player in self.players:
+                    for hand in player.hands:
+                        if not hand.busted_hand:
+                            all_busted = False
+                            break
+                    if not all_busted:
+                        break
+
+                if all_busted:
+                    print("All players have busted. Round over!")
                     return
 
                 if dealer_max_valid == 0:
@@ -109,6 +113,11 @@ class GameManager:
                     print(f'TIE: Player #{player_index+1} with hand #{hand_index+1} ties with dealer!')
                     continue
         return True
+
+    def create_histyory_output():
+        for player_index, player in enumerate(self.players):
+            for hand_index, hand in enumerate(player.hands):
+                return
 
     def play_round(self, player_index, hand_index, action):
         print("")
