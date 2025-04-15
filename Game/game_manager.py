@@ -10,7 +10,9 @@ class GameManager:
     def __init__(self, deck_count, players):
         self.players = []
         self.available_cards = []
+        self.original_deck = []
         self.dealer = Dealer()
+        self.shuffle_percent_rule = True
         self.initial_player_count = players
 
         # Sets up initial game setup, i.e Dealer gets 2 cards and player(s) get 2 cards
@@ -19,6 +21,7 @@ class GameManager:
     def initial_setup(self, deck_count):
         # Create deck of cards, based on the amount of decks (deck_count) you want
         self.create_decks(deck_count=deck_count)
+        self.original_deck = self.available_cards.copy()
 
         # Shuffles the deck at random
         self.shuffle()
@@ -47,6 +50,15 @@ class GameManager:
         return False
 
     def next_round(self):
+        if self.shuffle_percent_rule:
+            if len(self.available_cards) < len(self.original_deck) * 0.4:
+                print("Shuffling deck...")
+                self.available_cards = self.original_deck.copy()
+                self.shuffle()
+        else:
+            self.available_cards = self.original_deck.copy()
+            self.shuffle()
+
         self.players = []
         self.dealer = Dealer()
         
