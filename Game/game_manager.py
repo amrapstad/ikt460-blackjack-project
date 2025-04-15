@@ -14,6 +14,7 @@ class GameManager:
         self.dealer = Dealer()
         self.shuffle_percent_rule = True
         self.initial_player_count = players
+        self.round_history_output = []
 
         # Sets up initial game setup, i.e Dealer gets 2 cards and player(s) get 2 cards
         self.initial_setup(deck_count)
@@ -102,17 +103,20 @@ class GameManager:
                 else:
                     print(f'TIE: Player #{player_index+1} Hand #{hand_index+1} tied with the dealer at {player_max_valid}')
 
+        # TEMP CODE ############################## <------ NB TODO: REMOVE THIS
         if all_players_busted:
             print("ROUND OVER: All player hands busted. Dealer wins by default.")
+            self.create_histyory_output()
             return False
+        self.create_histyory_output()
 
         return True
 
-
-    def create_histyory_output():
+    def create_histyory_output(self):
         for player_index, player in enumerate(self.players):
             for hand_index, hand in enumerate(player.hands):
-                return
+                self.round_history_output.append(hand.hand_history)
+        return
 
     def play_round(self, player_index, hand_index, action):
         print("")
@@ -130,6 +134,17 @@ class GameManager:
             self.dealer.deal_algorithm(self.available_cards)
 
             self.check_winner()
+            
+            ### TEMP CODE ############################# <------ NB TODO: REMOVE THIS
+            print("\n ### Round over! ### \n")
+            print("### Round History ###")
+            for hand_index, hand in enumerate(player.hands):
+                print(f'Player #{player_index+1} Hand #{hand_index+1} history:')
+                for entry_index, (cards, stake, next_action) in enumerate(hand.hand_history):
+                    print(f'  Iteration {entry_index+1}: Action = {next_action}, Stake = {stake}')
+                    for card in cards:
+                        print(f'        {card.suit.name}, Value: {card.value}')
+
 
             print("\n ### Next round! ### \n")
             self.next_round()

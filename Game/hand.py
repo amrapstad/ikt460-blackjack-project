@@ -22,6 +22,10 @@ class Hand:
         if self.is_standing:
             raise Exception("Hit not allowed on standing hand")
 
+        # HISTORY LOGIC
+        if len(self.hand_cards) > 1:
+            self.add_to_history(self.hand_cards, self.stake, 1)
+
         # Remove top card from game deck and add to current hand
         self.hand_cards.append(available_cards.pop())
 
@@ -31,6 +35,10 @@ class Hand:
 
     def stand(self):
         self.is_standing = True
+
+        # HISTORY LOGIC
+        self.add_to_history(self.hand_cards, self.stake, 0)
+
         self.calculate_hand_values()
         return
 
@@ -39,6 +47,9 @@ class Hand:
             raise Exception("Hit not allowed on standing hand")
         elif len(self.hand_cards) != 2:
             raise Exception("Double down not allowed on a non-2-card hand")
+        
+        # HISTORY LOGIC
+        self.add_to_history(self.hand_cards, self.stake, 2)
 
         # Hit and then stand, doubling the current stake on the hand
         self.hit(available_cards)
@@ -53,6 +64,9 @@ class Hand:
             raise Exception(f"Split not allowed on hand with {len(self.hand_cards)} cards!")
         elif min(self.hand_cards[0].value, 10) != min(self.hand_cards[1].value, 10): # Split also works on different 10-valued cards (e.g. Jack and Queen)
             raise Exception("Split not allowed on cards of non-equal value")
+
+        # HISTORY LOGIC
+        self.add_to_history(self.hand_cards, self.stake, 3)
 
         # Split two cards into two separate hands
         split_card = self.hand_cards.pop() # Array of 2 cards
@@ -71,6 +85,9 @@ class Hand:
             self.insurance_stake = int(self.stake / 2)
         else:
             self.insurance_stake = 0
+        
+        # HISTORY LOGIC
+        self.add_to_history(self.hand_cards, self.insurance_stake, 4)
 
         return
 
@@ -102,5 +119,6 @@ class Hand:
         return
 
     def add_to_history(self, cards, stake, next_action):
-        new_entry = (cards, stake, next_action)
+        # Copy instead of reference
+        new_entry = (cards.copy(), stake, next_action)
         self.hand_history.append(new_entry)
