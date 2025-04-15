@@ -7,10 +7,11 @@ import random
 
 class GameManager:
     # On initialize
-    def __init__(self, deck_count):
+    def __init__(self, deck_count, players):
         self.players = []
         self.available_cards = []
         self.dealer = Dealer()
+        self.initial_player_count = players
 
         # Sets up initial game setup, i.e Dealer gets 2 cards and player(s) get 2 cards
         self.initial_setup(deck_count)
@@ -23,9 +24,10 @@ class GameManager:
         self.shuffle()
 
         # Initial player and hand with 2 cards for initial player
-        new_player = Player()
-        new_player.initial_hand(self.available_cards)
-        self.players.append(new_player)
+        for i in range(self.initial_player_count):
+            new_player = Player()
+            new_player.initial_hand(self.available_cards)
+            self.players.append(new_player)
 
         # Initial 2 cards for dealer
         self.dealer.initial_hand(self.available_cards)
@@ -43,6 +45,19 @@ class GameManager:
         if 21 in values and len(cards) < 3:
             return True
         return False
+
+    def next_round(self):
+        self.players = []
+        self.dealer = Dealer()
+        
+        # Initial player and hand with 2 cards for initial player
+        for i in range(self.initial_player_count):
+            new_player = Player()
+            new_player.initial_hand(self.available_cards)
+            self.players.append(new_player)
+
+        # Initial 2 cards for dealer
+        self.dealer.initial_hand(self.available_cards)
         
     def check_winner(self):
         # Check all max(possible_values) that is not higher than 21 for each hand for each player to see which hand won against dealer card values
@@ -83,7 +98,7 @@ class GameManager:
                     continue
         return True
 
-    def play_episode(self, player_index, hand_index, action):
+    def play_round(self, player_index, hand_index, action):
         print("")
         if (self.players[player_index].hands[hand_index].busted_hand is False):
             print(f'INPUT: Player #{player_index+1} does action #{action} on hand #{hand_index+1}')
@@ -99,3 +114,6 @@ class GameManager:
             self.dealer.deal_algorithm(self.available_cards)
 
             self.check_winner()
+
+            print("\n ### Next round! ### \n")
+            self.next_round()

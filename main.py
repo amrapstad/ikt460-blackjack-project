@@ -49,32 +49,33 @@ def loop():
         print("Deck count must be at least 1.")
         return
     environment = Environment(deck_count=deck_count)
-    for player_index, player in enumerate(environment.game_manager.players):
-        for hand_index, hand in enumerate(player.hands):
-            while True:
-                print("")
-                print(f'### Actions for Hand #{hand_index+1} ###')
-                print("0 - Stand")
-                print("1 - Hit")
-                print("2 - Double Down")
-                print("3 - Split")
-                print("4 - Insurance")
-                print("### Other Actions ###")
-                print("5 - Reset")
-                print("6 - Overview")
-                action = int(input("Enter action: "))
-                if action < 0 or action > 6:
-                    print("Invalid action. Please try again.")
-                    continue
-                if action == 5:
-                    continue
-                if action == 6:
+    while True:
+        for player_index, player in enumerate(environment.game_manager.players):
+            for hand_index, hand in enumerate(player.hands):
+                while True:
                     print_environment_state_player_view(environment)
-                    continue
-                environment.input(player_index, hand_index, action=action)
-                if action == 0 or 2:
-                    break
-    print("Game over.")
+                    print("")
+                    print(f'### Actions for Hand #{hand_index+1} ###')
+                    print("0 - Stand")
+                    print("1 - Hit")
+                    print("2 - Double Down")
+                    print("3 - Split")
+                    print("4 - Insurance")
+                    print("### Other Actions ###")
+                    print("5 - Reset")
+                    print("6 - Overview")
+                    action = int(input("Enter action: "))
+                    if action < 0 or action > 6:
+                        print("Invalid action. Please try again.")
+                        continue
+                    if action == 5:
+                        print("Game reset.")
+                        loop()
+                        continue
+                    environment.input(player_index, hand_index, action=action)
+                    if action == 0 or 2:
+                        break
     return
 
 loop()
+
