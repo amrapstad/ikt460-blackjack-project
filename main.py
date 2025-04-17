@@ -80,18 +80,19 @@ def loop():
                     if round_history_output is None:
                         continue
                     
-                    print("### Round History ###")
+                    print("\n### Round History ###")
 
-                    for hand_index, (hand_history, outcome, dealer_face_up_card) in enumerate(round_history_output):
-                        print(f'Player #{player_index + 1} Hand #{hand_index + 1} history:')
+                    for (p_index, h_index, hand_history, outcome, dealer_face_up_card) in round_history_output:
+                        print(f'Player #{p_index + 1} Hand #{h_index + 1} history:')
                         print(f'  Outcome: {outcome}')
                         print(f'  Dealer Face-Up Card: {dealer_face_up_card.suit.name}, Value: {dealer_face_up_card.value}')
-
                         for entry_index, (cards, stake, next_action) in enumerate(hand_history):
                             print(f'    Iteration {entry_index + 1}: Action = {next_action}, Stake = {stake}')
                             print(f'      Cards:')
                             for card in cards:
                                 print(f'        {card.suit.name}, Value: {card.value}')
+                
+                    print("\n### Next round! ### \n")
 
                     if action == 0 or action == 2:
                         break

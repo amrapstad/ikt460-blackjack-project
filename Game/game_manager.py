@@ -56,6 +56,10 @@ class GameManager:
 
         self.round_history_output = []
 
+        print(f'\n### Dealer Cards ###')
+        for card in self.dealer.dealer_cards:
+            print(f'    {card.suit}, Value: {card.value}')
+
         if self.shuffle_percent_rule:
             if len(self.available_cards) < len(self.original_deck) * 0.4:
                 print("Shuffling deck...")
@@ -136,9 +140,10 @@ class GameManager:
                     outcome = "LOSE"
                 else:
                     outcome = "TIE"
-                
+
                 hand_history = [(cards.copy(), stake, action) for cards, stake, action in hand.hand_history]
-                self.round_history_output.append((hand_history, outcome, self.dealer.face_up_card))
+                self.round_history_output.append((player_index, hand_index, hand_history, outcome, self.dealer.face_up_card))
+
 
 
 
@@ -159,6 +164,5 @@ class GameManager:
 
             self.check_winner()
 
-            print("\n ### Next round! ### \n")
             output = self.next_round()
             return output
