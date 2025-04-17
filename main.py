@@ -76,10 +76,7 @@ def loop():
                         continue
 
                     round_history_output = environment.input(player_index, hand_index, action=action)
-
-                    if action == 0 or action == 2:
-                        break
-
+                
                     if round_history_output is None:
                         continue
                     
@@ -95,6 +92,9 @@ def loop():
                             print(f'      Cards:')
                             for card in cards:
                                 print(f'        {card.suit.name}, Value: {card.value}')
+
+                    if action == 0 or action == 2:
+                        break
                 
     return
 
