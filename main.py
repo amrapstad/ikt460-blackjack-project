@@ -80,6 +80,8 @@ def loop():
                     if round_history_output is None:
                         continue
                     
+                    q_learning_agent.process_round_history_for_q_values(round_history_output)
+                    
                     print("\n### Round History ###")
 
                     for (p_index, h_index, hand_history, outcome, dealer_face_up_card) in round_history_output:
@@ -91,6 +93,9 @@ def loop():
                             print(f'      Cards:')
                             for card in cards:
                                 print(f'        {card.suit.name}, Value: {card.value}')
+                    
+                    print("\n### Q Table ###")
+                    q_learning_agent.print_q_tables()
                 
                     print("\n### Next round! ### \n")
 
