@@ -14,6 +14,7 @@ class GameManager:
         self.dealer = Dealer()
         self.shuffle_percent_rule = True
         self.initial_player_count = players
+        self.round_history_output = []
 
         # Sets up initial game setup, i.e Dealer gets 2 cards and player(s) get 2 cards
         self.initial_setup(deck_count)
@@ -50,6 +51,15 @@ class GameManager:
         return False
 
     def next_round(self):
+
+        output = self.round_history_output.copy()
+
+        self.round_history_output = []
+
+        print(f'\n### Dealer Cards ###')
+        for card in self.dealer.dealer_cards:
+            print(f'    {card.suit}, Value: {card.value}')
+
         if self.shuffle_percent_rule:
             if len(self.available_cards) < len(self.original_deck) * 0.4:
                 print("Shuffling deck...")
@@ -62,14 +72,15 @@ class GameManager:
         self.players = []
         self.dealer = Dealer()
         
-        # Initial player and hand with 2 cards for initial player
         for i in range(self.initial_player_count):
             new_player = Player()
             new_player.initial_hand(self.available_cards)
             self.players.append(new_player)
 
-        # Initial 2 cards for dealer
         self.dealer.initial_hand(self.available_cards)
+
+        return output
+
         
     def check_winner(self):
         all_players_busted = True
@@ -104,15 +115,37 @@ class GameManager:
 
         if all_players_busted:
             print("ROUND OVER: All player hands busted. Dealer wins by default.")
+            self.create_histyory_output()
             return False
+        self.create_histyory_output()
 
         return True
 
+    def create_histyory_output(self):
+        dealer_values = self.dealer.get_possible_values()
+        dealer_max_valid = max((v for v in dealer_values if v <= 21), default=0)
 
-    def create_histyory_output():
         for player_index, player in enumerate(self.players):
             for hand_index, hand in enumerate(player.hands):
-                return
+                player_values = hand.get_possible_values()
+                player_max_valid = max((v for v in player_values if v <= 21), default=0)
+
+                if player_max_valid == 0:
+                    outcome = "LOSE"
+                elif dealer_max_valid == 0:
+                    outcome = "WIN"
+                elif player_max_valid > dealer_max_valid:
+                    outcome = "WIN"
+                elif player_max_valid < dealer_max_valid:
+                    outcome = "LOSE"
+                else:
+                    outcome = "TIE"
+
+                hand_history = [(cards.copy(), stake, action) for cards, stake, action in hand.hand_history]
+                self.round_history_output.append((player_index, hand_index, hand_history, outcome, self.dealer.face_up_card))
+
+
+
 
     def play_round(self, player_index, hand_index, action):
         print("")
@@ -124,12 +157,12 @@ class GameManager:
             for player_index, player in enumerate(self.players):
                 for hand_index, hand in enumerate(player.hands):
                     if hand.is_standing is False:
-                        return False
+                        return None
             
             # Dealer does his actions
             self.dealer.deal_algorithm(self.available_cards)
 
             self.check_winner()
 
-            print("\n ### Next round! ### \n")
-            self.next_round()
+            output = self.next_round()
+            return output
