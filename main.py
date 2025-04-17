@@ -1,6 +1,7 @@
 from Game.environment import Environment
 from Game.dealer import Dealer
 from Game.card import Card, Suit
+from Agent.q_learning import Q_Learning
 
 
 
@@ -49,13 +50,14 @@ def loop():
         print("Deck count must be at least 1.")
         return
     environment = Environment(deck_count=deck_count)
+    q_learning_agent = Q_Learning()
     while True:
         for player_index, player in enumerate(environment.game_manager.players):
             for hand_index, hand in enumerate(player.hands):
                 while True:
                     print_environment_state_player_view(environment)
                     print("")
-                    print(f'### Actions for Hand #{hand_index+1} ###')
+                    print(f'### Actions for Player #{player_index+1} Hand #{hand_index+1} ###')
                     print("0 - Stand")
                     print("1 - Hit")
                     print("2 - Double Down")
@@ -72,7 +74,27 @@ def loop():
                         print("Game reset.")
                         loop()
                         continue
-                    environment.input(player_index, hand_index, action=action)
+
+                    round_history_output = environment.input(player_index, hand_index, action=action)
+                    if round_history_output is None:
+                        continue
+                    
+
+                    print("### Round History ###")
+
+                    for hand_index, (hand_history, outcome, dealer_face_up_card) in enumerate(round_history_output):
+                        print(f'Player #{player_index + 1} Hand #{hand_index + 1} history:')
+                        print(f'  Outcome: {outcome}')
+                        print(f'  Dealer Face-Up Card: {dealer_face_up_card.suit.name}, Value: {dealer_face_up_card.value}')
+
+                        for entry_index, (cards, stake, next_action) in enumerate(hand_history):
+                            print(f'    Iteration {entry_index + 1}: Action = {next_action}, Stake = {stake}')
+                            print(f'      Cards:')
+                            for card in cards:
+                                print(f'        {card.suit.name}, Value: {card.value}')
+                    
+
+
                     if action == 0 or 2:
                         break
     return

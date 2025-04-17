@@ -8,12 +8,14 @@ class Environment:
         return self.game_manager.available_cards, self.game_manager.players, self.game_manager.dealer
 
     def input(self, player_index, hand_index, action):
-        self.game_manager.play_round(player_index, hand_index, action)
+        round_history = self.game_manager.play_round(player_index, hand_index, action)
+        if round_history is not None:
+            return round_history
         for player in self.game_manager.players:
             for hand in player.hands:
                 if hand.is_standing is False:
-                    return
+                    return None
             print(f'### Dealer Cards ###')
         for card in self.game_manager.dealer.dealer_cards:
             print(f'    {card.suit}, Value: {card.value}')
-        return
+        return None
