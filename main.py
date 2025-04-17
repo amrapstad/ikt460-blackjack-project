@@ -54,7 +54,7 @@ def loop():
     while True:
         for player_index, player in enumerate(environment.game_manager.players):
             for hand_index, hand in enumerate(player.hands):
-                while True:
+                while hand.is_standing is False:
                     print_environment_state_player_view(environment)
                     print("")
                     print(f'### Actions for Player #{player_index+1} Hand #{hand_index+1} ###')
@@ -76,10 +76,13 @@ def loop():
                         continue
 
                     round_history_output = environment.input(player_index, hand_index, action=action)
+
+                    if action == 0 or action == 2:
+                        break
+
                     if round_history_output is None:
                         continue
                     
-
                     print("### Round History ###")
 
                     for hand_index, (hand_history, outcome, dealer_face_up_card) in enumerate(round_history_output):
@@ -92,11 +95,7 @@ def loop():
                             print(f'      Cards:')
                             for card in cards:
                                 print(f'        {card.suit.name}, Value: {card.value}')
-                    
-
-
-                    if action == 0 or 2:
-                        break
+                
     return
 
 loop()
