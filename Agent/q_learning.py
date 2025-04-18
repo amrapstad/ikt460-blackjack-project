@@ -1,3 +1,5 @@
+import random
+
 class Q_Learning:
     def __init__(self):
         self.q_tables = {}
@@ -6,7 +8,6 @@ class Q_Learning:
         for player_index, hand_index, hand_history, outcome, dealer_face_up_card in round_history_output:
             dealer_info = (dealer_face_up_card.value, dealer_face_up_card.suit.name)
 
-            # Initialize q_table for this player if it doesn't exist
             if player_index not in self.q_tables:
                 self.q_tables[player_index] = {}
 
@@ -17,16 +18,24 @@ class Q_Learning:
                 state = (player_hand_repr, dealer_info)
                 action_key = action
 
-                # Reward logic
+                # Default reward logic
                 if outcome == "WIN":
                     reward = stake
                 elif outcome == "LOSE":
                     reward = -stake
                 else:
                     reward = 0
-                if action == 3:
-                    reward *= 2
 
+                if action == 3:
+                    reward *= 2  # Extra multiplier for SPLIT
+
+                # Check for invalid action using shared logic
+                valid_actions = self.get_valid_actions_from_cards(cards, dealer_face_up_card)
+                if action not in valid_actions:
+                    print(f"Penalty: Invalid action {action} taken.")
+                    reward = -5 * stake
+
+                # Q-learning update
                 if (state, action_key) not in q_table:
                     q_table[(state, action_key)] = 0.0
 
@@ -42,6 +51,52 @@ class Q_Learning:
                 old_q = q_table[(state, action_key)]
                 new_q = old_q + learning_rate * (reward + discount_factor * max_future_q - old_q)
                 q_table[(state, action_key)] = new_q
+
+
+    def choose_action(self, player_index, player_hand, dealer_face_up_card, epsilon=0.1):
+        dealer_info = (dealer_face_up_card.value, dealer_face_up_card.suit.name)
+        player_hand_repr = tuple(sorted((card.value, card.suit.name) for card in player_hand.hand_cards))
+        state = (player_hand_repr, dealer_info)
+
+        if player_index not in self.q_tables:
+            self.q_tables[player_index] = {}
+
+        q_table = self.q_tables[player_index]
+
+        # Get valid actions for the current hand
+        valid_actions = self.get_valid_actions_from_cards(player_hand.hand_cards, dealer_face_up_card)
+        if not valid_actions:
+            return 0  # Fallback to STAND if somehow nothing is valid
+
+        # Exploration
+        if random.random() < epsilon:
+            return random.choice(valid_actions)
+
+        # Exploitation
+        q_values = {action: q_table.get((state, action), 0.0) for action in valid_actions}
+        best_action = max(q_values, key=q_values.get)
+        return best_action
+
+
+
+
+    def get_valid_actions_from_cards(self, cards, dealer_card):
+        valid_actions = [0, 1]  # STAND and HIT always valid
+
+        if len(cards) == 2:
+            valid_actions.append(2)  # DOUBLE
+
+            val1 = min(cards[0].value, 10)
+            val2 = min(cards[1].value, 10)
+            if val1 == val2:
+                valid_actions.append(3)  # SPLIT
+
+        if dealer_card.value == 1:
+            valid_actions.append(4)  # INSURANCE
+
+        return valid_actions
+
+
 
 
     def print_q_tables(self):
