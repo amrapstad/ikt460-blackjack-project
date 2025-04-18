@@ -23,7 +23,7 @@ class Player:
             print("New hand added to player hands")
             self.hands.append(new_hand)
         if action == 4:        
-            self.hands[hand].insurance()
+            self.hands[hand].do_insurance()
         return
 
 """

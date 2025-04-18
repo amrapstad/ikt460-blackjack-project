@@ -80,7 +80,7 @@ class Hand:
         return new_hand
 
     # True = Take insurance, False = Remove insurance
-    def insurance(self, insurance_direction):
+    def do_insurance(self, insurance_direction=True):
         if insurance_direction:
             self.insurance_stake = int(self.stake / 2)
         else:
