@@ -15,6 +15,7 @@ class RandomAgent:
                 valid_actions.append(3) 
 
         if dealer_card.value == 1:
-            valid_actions.append(4)
+            if len(cards) < 3:
+                valid_actions.append(4)
 
         return random.choice(valid_actions)

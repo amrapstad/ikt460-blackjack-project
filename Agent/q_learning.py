@@ -4,7 +4,7 @@ class Q_Learning:
     def __init__(self):
         self.q_tables = {}
 
-    def process_round_history_for_q_values(self, round_history_output, learning_rate=0.1, discount_factor=0.9):
+    def process_round_history_for_q_values(self, round_history_output, learning_rate=0.05, discount_factor=0.9):
         for player_index, hand_index, hand_history, outcome, dealer_face_up_card in round_history_output:
             dealer_info = (dealer_face_up_card.value, dealer_face_up_card.suit.name)
 
@@ -14,8 +14,8 @@ class Q_Learning:
             q_table = self.q_tables[player_index]
 
             for i, (cards, stake, action) in enumerate(hand_history):
-                player_hand_repr = tuple(sorted((card.value, card.suit.name) for card in cards))
-                state = (player_hand_repr, dealer_info)
+                player_possible_values = self.get_possible_values_from_cards(cards)
+                state = (tuple(sorted(player_possible_values)), dealer_face_up_card.value)
                 action_key = action
 
                 if outcome == "WIN":
@@ -51,11 +51,30 @@ class Q_Learning:
                 new_q = old_q + learning_rate * (reward + discount_factor * max_future_q - old_q)
                 q_table[(state, action_key)] = new_q
 
+    def get_possible_values_from_cards(self, cards):
+        total_values = [0]
+    
+        for card in cards:
+            card_value = card.value
+    
+            if card_value > 1:
+                add_value = min(card_value, 10)
+                for i in range(len(total_values)):
+                    total_values[i] += add_value
+            else:
+                max_value = max(total_values)
+                for i in range(len(total_values)):
+                    total_values[i] += 1
+                total_values.append(max_value + 11)
+    
+        return total_values
 
     def choose_action(self, player_index, player_hand, dealer_face_up_card, epsilon=0.1):
         dealer_info = (dealer_face_up_card.value, dealer_face_up_card.suit.name)
-        player_hand_repr = tuple(sorted((card.value, card.suit.name) for card in player_hand.hand_cards))
-        state = (player_hand_repr, dealer_info)
+        player_possible_values = self.get_possible_values_from_cards(player_hand.hand_cards)
+        state = (tuple(sorted(player_possible_values)), dealer_face_up_card.value)
+
+
 
         if player_index not in self.q_tables:
             self.q_tables[player_index] = {}
@@ -91,7 +110,8 @@ class Q_Learning:
                 valid_actions.append(3)  # SPLIT
 
         if dealer_card.value == 1:
-            valid_actions.append(4)  # INSURANCE
+            if len(cards) < 3:
+                valid_actions.append(4)  # INSURANCE
 
         return valid_actions
 

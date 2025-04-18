@@ -124,25 +124,55 @@ class GameManager:
     def create_histyory_output(self):
         dealer_values = self.dealer.get_possible_values()
         dealer_max_valid = max((v for v in dealer_values if v <= 21), default=0)
+        dealer_has_blackjack = dealer_max_valid == 21 and len(self.dealer.dealer_cards) == 2
 
         for player_index, player in enumerate(self.players):
             for hand_index, hand in enumerate(player.hands):
                 player_values = hand.get_possible_values()
                 player_max_valid = max((v for v in player_values if v <= 21), default=0)
 
-                if player_max_valid == 0:
+                stake = hand.stake
+                insurance_penalty = 0
+                hand_reward = 0
+
+                # Apply insurance logic
+                if hand.insurance_stake > 0:
+                    if dealer_has_blackjack:
+                        insurance_reward = hand.insurance_stake * 2
+                    else:
+                        insurance_reward = -hand.insurance_stake
+                    insurance_penalty += insurance_reward
+                else:
+                    insurance_reward = 0
+
+                # Determine hand outcome
+                if dealer_has_blackjack:
                     outcome = "LOSE"
-                elif dealer_max_valid == 0:
+                    hand_reward = -stake
+                elif player_max_valid == 0:
+                    outcome = "LOSE"
+                    hand_reward = -stake
+                elif dealer_max_valid == 0 or player_max_valid > dealer_max_valid:
                     outcome = "WIN"
-                elif player_max_valid > dealer_max_valid:
-                    outcome = "WIN"
+                    hand_reward = stake*2
                 elif player_max_valid < dealer_max_valid:
                     outcome = "LOSE"
+                    hand_reward = -stake
                 else:
                     outcome = "TIE"
+                    hand_reward = 0
 
-                hand_history = [(cards.copy(), stake, action) for cards, stake, action in hand.hand_history]
-                self.round_history_output.append((player_index, hand_index, hand_history, outcome, self.dealer.face_up_card))
+                # Total result includes insurance effect
+                total_reward = hand_reward + insurance_penalty
+                
+                hand_history = [(cards.copy(), s, a) for cards, s, a in hand.hand_history]
+                self.round_history_output.append(
+                    (player_index, hand_index, hand_history, outcome, self.dealer.face_up_card)
+                )
+                
+                #
+                if hand_history:
+                    hand_history[-1] = (hand_history[-1][0], abs(total_reward), hand_history[-1][2])
 
 
 
