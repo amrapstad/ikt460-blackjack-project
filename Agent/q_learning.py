@@ -13,21 +13,21 @@ class Q_Learning:
 
             q_table = self.q_tables[player_index]
 
-            for i, (cards, stake, action) in enumerate(hand_history):
-                player_hand_repr = tuple(sorted((card.value, card.suit.name) for card in cards))
-                state = (player_hand_repr, dealer_info)
-                action_key = action
+                for i, (cards, stake, action) in enumerate(hand_history):
+                    player_hand_repr = tuple(sorted((card.value, card.suit.name) for card in cards))
+                    state = (player_hand_repr, dealer_info)
+                    action_key = action
 
-                # Default reward logic
-                if outcome == "WIN":
-                    reward = stake
-                elif outcome == "LOSE":
-                    reward = -stake
-                else:
-                    reward = 0
+                    if outcome == "WIN":
+                        reward = stake if i == len(hand_history) - 1 else 0.5 * stake
+                    elif outcome == "LOSE":
+                        reward = -stake if i == len(hand_history) - 1 else 0.5 * stake
+                    else:
+                        reward = 0
 
-                if action == 3:
-                    reward *= 2  # Extra multiplier for SPLIT
+                    if action == 3:
+                        reward *= 2
+
 
                 # Check for invalid action using shared logic
                 valid_actions = self.get_valid_actions_from_cards(cards, dealer_face_up_card)
