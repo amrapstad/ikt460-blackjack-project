@@ -130,7 +130,7 @@ def run_simulation(rounds_to_simulate=1000000):
                     break
 
     # Save round outcomes
-    with open("round_outcomes.csv", mode="w", newline="") as file:
+    with open("CSV/round_outcomes.csv", mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Round", "Player", "Hand", "Outcome", "Return"])
         writer.writerows(round_outcomes)
@@ -191,7 +191,7 @@ def run_evaluation(q_learning_agent, num_games):
                     break
 
     # Save evaluation results
-    with open("evaluation_results.csv", mode="w", newline="") as file:
+    with open("CSV/evaluation_results.csv", mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Game", "Player", "Hand", "Outcome", "Return"])
         writer.writerows(results)
@@ -199,7 +199,7 @@ def run_evaluation(q_learning_agent, num_games):
     print("✅ Evaluation complete. Results saved to 'evaluation_results.csv'")
 
 def plot_evaluation_results():
-    df_eval = pd.read_csv("evaluation_results.csv")
+    df_eval = pd.read_csv("CSV/evaluation_results.csv")
 
     rounds = pd.Series(range(1, df_eval["Game"].max() + 1), name="Game")
 
@@ -217,7 +217,7 @@ def plot_evaluation_results():
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("evaluation_cumulative_wins.png")
+    plt.savefig("Plots/evaluation_cumulative_wins.png")
     plt.show()
 
     # Plot 2: Cumulative Returns (Evaluation)
@@ -234,7 +234,7 @@ def plot_evaluation_results():
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("evaluation_cumulative_returns.png")
+    plt.savefig("Plots/evaluation_cumulative_returns.png")
     plt.show()
 
 
@@ -256,7 +256,7 @@ def plot_training_results(csv_path="round_outcomes.csv"):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("training_cumulative_wins.png")
+    plt.savefig("Plots/training_cumulative_wins.png")
     plt.show()
 
     # Plot 2: Cumulative Returns (Training)
@@ -273,7 +273,7 @@ def plot_training_results(csv_path="round_outcomes.csv"):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("training_cumulative_returns.png")
+    plt.savefig("Plots/training_cumulative_returns.png")
     plt.show()
 
 def plot_return_distributions(train_path="round_outcomes.csv", eval_path="evaluation_results.csv"):
@@ -326,7 +326,7 @@ def plot_return_distributions(train_path="round_outcomes.csv", eval_path="evalua
 
         # Save and show
         filename = f"return_distribution_{player_labels[player_id].lower().replace(' ', '_')}.png"
-        plt.savefig(filename)
+        plt.savefig(f"Plots/{filename}")
         plt.show()
 
 

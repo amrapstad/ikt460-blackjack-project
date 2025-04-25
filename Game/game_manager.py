@@ -45,10 +45,8 @@ class GameManager:
     def shuffle(self):
         random.shuffle(self.available_cards)
 
-    def blackjack(self, values, cards):
-        if 21 in values and len(cards) < 3:
-            return True
-        return False
+    def blackjack(self, values, cards, hands):
+        return 21 in values and len(cards) == 2 and hands == 1
 
     def next_round(self):
 
@@ -104,7 +102,7 @@ class GameManager:
                     continue
 
                 if player_max_valid > dealer_max_valid:
-                    if self.blackjack(player_values, hand.hand_cards) and not self.blackjack(dealer_values, self.dealer.dealer_cards):
+                    if self.blackjack(player_values, hand.hand_cards, len(player.hands)) and not self.blackjack(dealer_values, self.dealer.dealer_cards, 1):
                         print(f'BLACKJACK WIN: Player #{player_index+1} Hand #{hand_index+1} wins with Blackjack! Dealer has {dealer_max_valid}')
                     else:
                         print(f'WINNER: Player #{player_index+1} Hand #{hand_index+1} wins with {player_max_valid} against dealers {dealer_max_valid}')
@@ -115,13 +113,13 @@ class GameManager:
 
         if all_players_busted:
             print("ROUND OVER: All player hands busted. Dealer wins by default.")
-            self.create_histyory_output()
+            self.create_history_output()
             return False
-        self.create_histyory_output()
+        self.create_history_output()
 
         return True
 
-    def create_histyory_output(self):
+    def create_history_output(self):
         dealer_values = self.dealer.get_possible_values()
         dealer_max_valid = max((v for v in dealer_values if v <= 21), default=0)
         dealer_has_blackjack = dealer_max_valid == 21 and len(self.dealer.dealer_cards) == 2
@@ -130,6 +128,7 @@ class GameManager:
             for hand_index, hand in enumerate(player.hands):
                 player_values = hand.get_possible_values()
                 player_max_valid = max((v for v in player_values if v <= 21), default=0)
+                player_has_blackjack = player_max_valid == 21 and len(hand.hand_cards) == 2 and len(player.hands) == 1
 
                 stake = hand.stake
                 insurance_penalty = 0
@@ -147,14 +146,21 @@ class GameManager:
 
                 # Determine hand outcome
                 if dealer_has_blackjack:
-                    outcome = "LOSE"
-                    hand_reward = -stake
+                    if player_has_blackjack:
+                        outcome = "TIE"
+                        hand_reward = 0
+                    else:
+                        outcome = "LOSE"
+                        hand_reward = -stake
+                elif player_has_blackjack:
+                    outcome = "WIN"
+                    hand_reward = int(stake * 1.5)
                 elif player_max_valid == 0:
                     outcome = "LOSE"
                     hand_reward = -stake
                 elif dealer_max_valid == 0 or player_max_valid > dealer_max_valid:
                     outcome = "WIN"
-                    hand_reward = stake*2
+                    hand_reward = stake
                 elif player_max_valid < dealer_max_valid:
                     outcome = "LOSE"
                     hand_reward = -stake
