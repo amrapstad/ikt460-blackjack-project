@@ -1,6 +1,6 @@
 import pandas as pd
-import time
-
+import os
+from definitions import TABLES_DIR
 
 def get_action_from_csv(csv_table, player_card_value, face_up_card):
     # Format:
@@ -16,6 +16,10 @@ def get_action_from_csv(csv_table, player_card_value, face_up_card):
     # Y - Yes, do split
     # N, No, don't do split
 
+    # Make jack, queen and king equal 10
+    player_card_value = min(player_card_value, 10)
+    face_up_card = min(face_up_card, 10)
+
     # First column name is '0'
     row = csv_table[csv_table['0'] == player_card_value]
 
@@ -26,9 +30,9 @@ def get_action_from_csv(csv_table, player_card_value, face_up_card):
 
 class OptimalAgent:
     def __init__(self):
-        self.hard_total_table = pd.read_csv("hard_total.csv")
-        self.soft_total_table = pd.read_csv("soft_total.csv")
-        self.split_table = pd.read_csv("split.csv")
+        self.hard_total_table = pd.read_csv(os.path.join(TABLES_DIR, "hard_total.csv"))
+        self.soft_total_table = pd.read_csv(os.path.join(TABLES_DIR, "soft_total.csv"))
+        self.split_table = pd.read_csv(os.path.join(TABLES_DIR, "split.csv"))
 
         """
         Actions:
@@ -70,6 +74,7 @@ class OptimalAgent:
                 result = get_action_from_csv(self.split_table, card1_value, face_up_card_value)  # Y or N
                 current_action = self.action_dictionary[result]
 
+        # When not splitting, whether possible or not
         if current_action < 0:
             player_hand.calculate_hand_values()
             soft_hand = len(player_hand.possible_values) > 1 # True: Soft hand, False: Hard hand
@@ -82,5 +87,12 @@ class OptimalAgent:
                 hand_total = player_hand.possible_values[0]
                 result = get_action_from_csv(self.hard_total_table, hand_total, face_up_card_value)
                 current_action = self.action_dictionary[result]
+
+        # Lastly, convert DD to hit if more than 2 cards in hand
+        if len(card_list) > 2 and current_action == 2:
+            current_action = 1
+
+        if current_action < 0 or current_action > 3:
+            raise Exception("Invalid action from optimal agent!")
 
         return current_action

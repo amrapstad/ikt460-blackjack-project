@@ -1,8 +1,8 @@
 from Game.game_manager import GameManager
 
 class Environment:
-    def __init__(self, deck_count):
-        self.game_manager = GameManager(deck_count=deck_count, players=2)
+    def __init__(self, deck_count, players):
+        self.game_manager = GameManager(deck_count=deck_count, players=players)
         
     def get_game_state(self):
         return self.game_manager.available_cards, self.game_manager.players, self.game_manager.dealer
