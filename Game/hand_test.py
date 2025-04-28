@@ -69,7 +69,8 @@ def test_for_splitting():
 
 # Test for hand values
 def test_for_hand_values():
-    hand = Hand([Card(Suit.CLUBS, 9), Card(Suit.HEARTS, 1), Card(Suit.SPADES, 1), Card(Suit.CLUBS, 2)])
+    #hand = Hand([Card(Suit.CLUBS, 9), Card(Suit.HEARTS, 1), Card(Suit.SPADES, 1), Card(Suit.CLUBS, 2)])
+    hand = Hand([Card(Suit.CLUBS, 2), Card(Suit.HEARTS, 3), Card(Suit.SPADES, 1)])
 
     print("\nHand:")
     for i in range(len(hand.hand_cards)):

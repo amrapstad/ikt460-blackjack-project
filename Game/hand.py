@@ -115,6 +115,11 @@ class Hand:
             self.busted_hand = True
             self.is_standing = True
 
+        # Remove busted values beyond the first
+        for i in range(len(total_values)-1, 0, -1):
+            if total_values[i] > 21:
+                total_values.pop(i)
+
         self.possible_values = total_values
         return
 

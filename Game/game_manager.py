@@ -185,7 +185,7 @@ class GameManager:
 
     def play_round(self, player_index, hand_index, action):
         print("")
-        if (self.players[player_index].hands[hand_index].busted_hand is False):
+        if self.players[player_index].hands[hand_index].busted_hand is False:
             print(f'INPUT: Player #{player_index+1} does action #{action} on hand #{hand_index+1}')
             self.players[player_index].action_input(hand_index, action, self.available_cards)
 
