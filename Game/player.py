@@ -27,6 +27,7 @@ class Player:
         return
 
 """
+Actions:
 0 - Stand
 1 - Hit
 2 - Double down

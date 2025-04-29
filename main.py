@@ -1,3 +1,4 @@
+import os
 import csv
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,9 +8,10 @@ from Game.environment import Environment
 from Game.dealer import Dealer
 from Game.card import Card, Suit
 from Agent.q_learning import Q_Learning
-from Agent.random_agent import RandomAgent 
+from Agent.random_agent import RandomAgent
+from Agent.optimal_agent import OptimalAgent
 
-
+from definitions import CSV_DIR, PLOTS_DIR
 
 def print_environment_state_true():
     print("")
@@ -52,7 +54,8 @@ def print_environment_state_player_view(environment):
 def save_q_tables_to_csv(q_learning_agent):
     for player_index, q_table in q_learning_agent.q_tables.items():
         filename = f"q_table_player_{player_index + 1}.csv"
-        with open(filename, mode='w', newline='') as file:
+        filepath = os.path.join(CSV_DIR, filename)
+        with open(filepath, mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["Player Hand", "Dealer Card", "Action", "Q-Value"])
 
@@ -64,17 +67,17 @@ def save_q_tables_to_csv(q_learning_agent):
                 writer.writerow([player_hand_str, dealer_card_str, action, round(q_value, 4)])
 
 def run_simulation(rounds_to_simulate=1000000):
-    environment = Environment(deck_count=4)
-    q_learning_agent = Q_Learning()
-    random_agent = RandomAgent()
-
+    environment = Environment(deck_count=4, players=3)
+    q_learning_agent = Q_Learning() # Index = 0
+    random_agent = RandomAgent() # Index = 1
+    optimal_agent = OptimalAgent() # Index = 2
 
 
     round_outcomes = []
-    return_tracking = {0: [], 1: []}
-    cumulative_return = {0: 0, 1: 0}
-    win_tracking = {0: [], 1: []}
-    cumulative_wins = {0: 0, 1: 0}
+    return_tracking = {0: [], 1: [], 2: []}
+    cumulative_return = {0: 0, 1: 0, 2: 0}
+    win_tracking = {0: [], 1: [], 2: []}
+    cumulative_wins = {0: 0, 1: 0, 2: 0}
 
     for round_num in range(1, rounds_to_simulate + 1):
         print(f"\n=== Simulation Round {round_num} ===")
@@ -90,8 +93,12 @@ def run_simulation(rounds_to_simulate=1000000):
                         action = q_learning_agent.choose_action(
                             player_index, hand, environment.game_manager.dealer.face_up_card
                         )
-                    else:
+                    elif player_index == 1:
                         action = random_agent.choose_action(
+                            hand, environment.game_manager.dealer.face_up_card
+                        )
+                    elif player_index == 2:
+                        action = optimal_agent.choose_action(
                             hand, environment.game_manager.dealer.face_up_card
                         )
 
@@ -130,7 +137,8 @@ def run_simulation(rounds_to_simulate=1000000):
                     break
 
     # Save round outcomes
-    with open("CSV/round_outcomes.csv", mode="w", newline="") as file:
+    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
+    with open(csv_path, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Round", "Player", "Hand", "Outcome", "Return"])
         writer.writerows(round_outcomes)
@@ -144,8 +152,9 @@ def run_simulation(rounds_to_simulate=1000000):
 
 def run_evaluation(q_learning_agent, num_games):
     print(f"\n🔍 Running evaluation over {num_games} games...")
-    environment = Environment(deck_count=4)
+    environment = Environment(deck_count=4, players=3)
     random_agent = RandomAgent()
+    optimal_agent = OptimalAgent()
 
     results = []
 
@@ -163,8 +172,12 @@ def run_evaluation(q_learning_agent, num_games):
                         action = q_learning_agent.choose_action(
                             player_index, hand, environment.game_manager.dealer.face_up_card
                         )
-                    else:
+                    elif player_index == 1:
                         action = random_agent.choose_action(
+                            hand, environment.game_manager.dealer.face_up_card
+                        )
+                    elif player_index == 2:
+                        action = optimal_agent.choose_action(
                             hand, environment.game_manager.dealer.face_up_card
                         )
 
@@ -191,7 +204,8 @@ def run_evaluation(q_learning_agent, num_games):
                     break
 
     # Save evaluation results
-    with open("CSV/evaluation_results.csv", mode="w", newline="") as file:
+    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+    with open(csv_path, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Game", "Player", "Hand", "Outcome", "Return"])
         writer.writerows(results)
@@ -199,13 +213,14 @@ def run_evaluation(q_learning_agent, num_games):
     print("✅ Evaluation complete. Results saved to 'evaluation_results.csv'")
 
 def plot_evaluation_results():
-    df_eval = pd.read_csv("CSV/evaluation_results.csv")
+    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+    df_eval = pd.read_csv(csv_path)
 
     rounds = pd.Series(range(1, df_eval["Game"].max() + 1), name="Game")
 
     # Plot 1: Cumulative Wins (Evaluation)
     plt.figure(figsize=(12, 6))
-    for player_id, label in zip([0, 1], ["Q-Learning", "Random"]):
+    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
         df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Game").size().cumsum()
         wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
@@ -222,7 +237,7 @@ def plot_evaluation_results():
 
     # Plot 2: Cumulative Returns (Evaluation)
     plt.figure(figsize=(12, 6))
-    for player_id, label in zip([0, 1], ["Q-Learning", "Random"]):
+    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
         df_player = df_eval[df_eval["Player"] == player_id]
         returns = df_player.groupby("Game")["Return"].sum().cumsum()
         returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
@@ -238,13 +253,14 @@ def plot_evaluation_results():
     plt.show()
 
 
-def plot_training_results(csv_path="round_outcomes.csv"):
+def plot_training_results():
+    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
     df = pd.read_csv(csv_path)
     rounds = pd.Series(range(1, df["Round"].max() + 1), name="Round")
 
     # Plot 1: Cumulative Wins (Training)
     plt.figure(figsize=(12, 6))
-    for player_id, label in zip([0, 1], ["Q-Learning", "Random"]):
+    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
         df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Round").size().cumsum()
         wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
@@ -261,7 +277,7 @@ def plot_training_results(csv_path="round_outcomes.csv"):
 
     # Plot 2: Cumulative Returns (Training)
     plt.figure(figsize=(12, 6))
-    for player_id, label in zip([0, 1], ["Q-Learning", "Random"]):
+    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
         df_player = df[df["Player"] == player_id]
         returns = df_player.groupby("Round")["Return"].sum().cumsum()
         returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
@@ -276,7 +292,7 @@ def plot_training_results(csv_path="round_outcomes.csv"):
     plt.savefig("Plots/training_cumulative_returns.png")
     plt.show()
 
-def plot_return_distributions(train_path="round_outcomes.csv", eval_path="evaluation_results.csv"):
+def plot_return_distributions(train_path="round_outcomes.csv"):
     # Define bin edges and labels
     bin_edges = [-float("inf"), -40, -20, -10, -5, 0, 5, 10, 20, 40, float("inf")]
     bin_labels = ["< -40", "-40", "-20", "-10", "-5", "0", "5", "10", "20", "40+"]
@@ -290,13 +306,14 @@ def plot_return_distributions(train_path="round_outcomes.csv", eval_path="evalua
     df_train = pd.read_csv(train_path)
     df_train = prepare_distribution(df_train, "Training")
 
-    df_eval = pd.read_csv(eval_path)
+    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+    df_eval = pd.read_csv(csv_path)
     df_eval = prepare_distribution(df_eval, "Evaluation")
 
     # Combine both
     df_all = pd.concat([df_train, df_eval], ignore_index=True)
 
-    player_labels = ["Q-Learning", "Random"]
+    player_labels = ["Q-Learning", "Random", "Optimal"]
 
     for player_id in [0, 1]:
         df_player = df_all[df_all["Player"] == player_id]
@@ -333,11 +350,13 @@ def plot_return_distributions(train_path="round_outcomes.csv", eval_path="evalua
 
 if __name__ == "__main__":
     # Training
-    q_learning_agent = run_simulation(rounds_to_simulate=1000000)
+    # q_learning_agent = run_simulation(rounds_to_simulate=1000000)
+    q_learning_agent = run_simulation(rounds_to_simulate=1000)
     plot_training_results()
 
     # Evaluation
-    run_evaluation(q_learning_agent, num_games=10000)
+    # run_evaluation(q_learning_agent, num_games=10000)
+    run_evaluation(q_learning_agent, num_games=100)
     plot_evaluation_results()
 
     # Win/Loss Distribution of Stakes
