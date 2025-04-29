@@ -1,5 +1,5 @@
-from card import Card, Suit
-from hand import Hand
+from Game.card import Card, Suit
+from Game.hand import Hand
 
 # Test for hitting
 def test_for_hitting():

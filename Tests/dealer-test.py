@@ -1,5 +1,5 @@
-from dealer import Dealer
-from card import Card, Suit
+from Game.dealer import Dealer
+from Game.card import Card, Suit
 
 
 def deal_algorithm():

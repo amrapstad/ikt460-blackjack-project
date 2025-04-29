@@ -1,5 +1,5 @@
 import pandas as pd
-from optimal_agent import OptimalAgent, get_action_from_csv
+from Agent.optimal_agent import OptimalAgent
 from Game.card import Card, Suit
 from Game.hand import Hand
 
