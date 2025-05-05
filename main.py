@@ -292,7 +292,7 @@ def plot_training_results():
     plt.savefig("Plots/training_cumulative_returns.png")
     plt.show()
 
-def plot_return_distributions(train_path="round_outcomes.csv"):
+def plot_return_distributions():
     # Define bin edges and labels
     bin_edges = [-float("inf"), -40, -20, -10, -5, 0, 5, 10, 20, 40, float("inf")]
     bin_labels = ["< -40", "-40", "-20", "-10", "-5", "0", "5", "10", "20", "40+"]
@@ -303,7 +303,8 @@ def plot_return_distributions(train_path="round_outcomes.csv"):
         return df
 
     # Load and label the data
-    df_train = pd.read_csv(train_path)
+    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
+    df_train = pd.read_csv(csv_path)
     df_train = prepare_distribution(df_train, "Training")
 
     csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
@@ -315,7 +316,7 @@ def plot_return_distributions(train_path="round_outcomes.csv"):
 
     player_labels = ["Q-Learning", "Random", "Optimal"]
 
-    for player_id in [0, 1]:
+    for player_id in [0, 1, 2]:
         df_player = df_all[df_all["Player"] == player_id]
 
         # Group by Bin and Source (training/eval)
