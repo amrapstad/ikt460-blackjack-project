@@ -219,22 +219,105 @@ def run_evaluation(q_learning_agent, num_games):
     csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
     with open(csv_path, mode="w", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["Game", "Player", "Hand", "Outcome", "Return"])
+        writer.writerow(["Round", "Player", "Hand", "Outcome", "Return"])
         writer.writerows(results)
 
     print("✅ Evaluation complete. Results saved to 'evaluation_results.csv'")
+
+
+def plot_training_results():
+    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
+    df = pd.read_csv(csv_path)
+    rounds = pd.Series(range(1, df["Round"].max() + 1), name="Round")
+
+    # ----- Plot 1: Cumulative wins over rounds (Training) -----
+    plt.figure(figsize=(12, 6))
+    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
+        df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
+        wins_cumulative = df_wins.groupby("Round").size().cumsum()
+        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, wins_full, label=f"{label} Wins")
+
+    plt.xlabel("Rounds")
+    plt.ylabel("Cumulative Wins")
+    plt.title("Training: Cumulative Wins Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_wins_rounds.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+    # ----- Plot 2: Cumulative wins over hands (Training) -----
+    plt.figure(figsize=(12, 6))
+    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
+        df_player = df[df["Player"] == player_id].sort_values(by=["Round", "Hand"]).reset_index(drop=True)
+        df_player["LocalHand"] = range(1, len(df_player) + 1)
+        df_wins = df_player[df_player["Outcome"] == "WIN"]
+        hands = df_player["LocalHand"]
+        wins_cumulative = df_wins.groupby("LocalHand").size().cumsum()
+        wins_full = wins_cumulative.reindex(hands).ffill().fillna(0).astype(int)
+        plt.plot(hands, wins_full, label=f"{label} Wins")
+
+    plt.xlabel("Hands")
+    plt.ylabel("Cumulative Wins")
+    plt.title("Training: Cumulative Wins Over Hands")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_wins_hands.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+    # ----- Plot 3: Cumulative return over rounds (Training) -----
+    plt.figure(figsize=(12, 6))
+    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
+        df_player = df[df["Player"] == player_id]
+        returns = df_player.groupby("Round")["Return"].sum().cumsum()
+        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, returns_full, label=f"{label} Return", linestyle="--")
+
+    plt.xlabel("Rounds")
+    plt.ylabel("Cumulative Return")
+    plt.title("Training: Cumulative Return Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_return_rounds.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+    # ----- Plot 4: Cumulative returns over hands (Training) -----
+    plt.figure(figsize=(12, 6))
+    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
+        df_player = df[df["Player"] == player_id].sort_values(by=["Round", "Hand"]).reset_index(drop=True)
+        df_player["LocalHand"] = range(1, len(df_player) + 1)
+        hands = df_player["LocalHand"]
+        returns_cumulative = df_player["Return"].cumsum()
+        plt.plot(hands, returns_cumulative, label=f"{label} Return", linestyle="--")
+
+    plt.xlabel("Hands")
+    plt.ylabel("Cumulative Return")
+    plt.title("Training: Cumulative Return Over Hands")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_return_hands.png")
+    plt.savefig(plots_path)
+    plt.show()
+
 
 def plot_evaluation_results():
     csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
     df_eval = pd.read_csv(csv_path)
 
-    rounds = pd.Series(range(1, df_eval["Game"].max() + 1), name="Game")
+    rounds = pd.Series(range(1, df_eval["Round"].max() + 1), name="Round")
 
-    # Plot 1: Cumulative Wins over games (Evaluation)
+    # ----- Plot 1: Cumulative wins over rounds (Evaluation) -----
     plt.figure(figsize=(12, 6))
     for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
         df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
-        wins_cumulative = df_wins.groupby("Game").size().cumsum()
+        wins_cumulative = df_wins.groupby("Round").size().cumsum()
         wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
         plt.plot(rounds, wins_full, label=f"{label} Wins")
 
@@ -244,15 +327,36 @@ def plot_evaluation_results():
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_wins.png")
+    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_wins_rounds.png")
     plt.savefig(plots_path)
     plt.show()
 
-    # Plot 3: Cumulative Returns (Evaluation)
+    # ----- Plot 2: Cumulative wins over hands (Evaluation) -----
+    plt.figure(figsize=(12, 6))
+    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
+        df_player = df_eval[df_eval["Player"] == player_id].sort_values(by=["Round", "Hand"]).reset_index(drop=True)
+        df_player["LocalHand"] = range(1, len(df_player) + 1)
+        hands = df_player["LocalHand"]
+        df_wins = df_player[df_player["Outcome"] == "WIN"]
+        wins_cumulative = df_wins.groupby("LocalHand").size().cumsum()
+        wins_full = wins_cumulative.reindex(hands).ffill().fillna(0).astype(int)
+        plt.plot(hands, wins_full, label=f"{label} Wins")
+
+    plt.xlabel("Hands")
+    plt.ylabel("Cumulative Wins")
+    plt.title("Evaluation: Cumulative Wins Over Hands")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_wins_hands.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+    # ----- Plot 3: Cumulative return over rounds (Evaluation) -----
     plt.figure(figsize=(12, 6))
     for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
         df_player = df_eval[df_eval["Player"] == player_id]
-        returns = df_player.groupby("Game")["Return"].sum().cumsum()
+        returns = df_player.groupby("Round")["Return"].sum().cumsum()
         returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
         plt.plot(rounds, returns_full, label=f"{label} Return", linestyle="--")
 
@@ -262,51 +366,29 @@ def plot_evaluation_results():
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_returns.png")
+    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_return_rounds.png")
     plt.savefig(plots_path)
     plt.show()
 
-
-def plot_training_results():
-    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
-    df = pd.read_csv(csv_path)
-    rounds = pd.Series(range(1, df["Round"].max() + 1), name="Round")
-
-    # Plot 1: Cumulative Wins (Training)
+    # ----- Plot 4: Cumulative return over hands (Evaluation) -----
     plt.figure(figsize=(12, 6))
     for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
-        df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
-        wins_cumulative = df_wins.groupby("Round").size().cumsum()
-        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, wins_full, label=f"{label} Wins")
+        df_player = df_eval[df_eval["Player"] == player_id].sort_values(by=["Round", "Hand"]).reset_index(drop=True)
+        df_player["LocalHand"] = range(1, len(df_player) + 1)
+        hands = df_player["LocalHand"]
+        returns_cumulative = df_player["Return"].cumsum()
+        plt.plot(hands, returns_cumulative, label=f"{label} Return", linestyle="--")
 
-    plt.xlabel("Round")
-    plt.ylabel("Cumulative Wins")
-    plt.title("Training: Cumulative Wins Over Rounds")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_wins.png")
-    plt.savefig(plots_path)
-    plt.show()
-
-    # Plot 2: Cumulative Returns (Training)
-    plt.figure(figsize=(12, 6))
-    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
-        df_player = df[df["Player"] == player_id]
-        returns = df_player.groupby("Round")["Return"].sum().cumsum()
-        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, returns_full, label=f"{label} Return", linestyle="--")
-
-    plt.xlabel("Round")
+    plt.xlabel("Hands")
     plt.ylabel("Cumulative Return")
-    plt.title("Training: Cumulative Return Over Rounds")
+    plt.title("Evaluation: Cumulative Return Over Hands")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_returns.png")
+    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_return_hands.png")
     plt.savefig(plots_path)
     plt.show()
+
 
 def plot_return_distributions():
     # Define bin edges and labels
