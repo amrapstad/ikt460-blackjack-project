@@ -136,6 +136,12 @@ def run_simulation(rounds_to_simulate=1000000):
                 if round_finished:
                     break
 
+    # Count number of hands for each player
+    hands_played = {0: 0, 1: 0, 2: 0}
+    for _round in round_outcomes:
+        p_idx = _round[1] # Gets p_idx from current entry in round_outcomes
+        hands_played[p_idx] += 1
+
     # Save round outcomes
     csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
     with open(csv_path, mode="w", newline="") as file:
@@ -203,6 +209,12 @@ def run_evaluation(q_learning_agent, num_games):
                 if round_finished:
                     break
 
+    # Count number of hands for each player
+    hands_played = {0: 0, 1: 0, 2: 0}
+    for _round in results:
+        p_idx = _round[1]  # Gets p_idx from current entry in round_outcomes
+        hands_played[p_idx] += 1
+
     # Save evaluation results
     csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
     with open(csv_path, mode="w", newline="") as file:
@@ -218,7 +230,7 @@ def plot_evaluation_results():
 
     rounds = pd.Series(range(1, df_eval["Game"].max() + 1), name="Game")
 
-    # Plot 1: Cumulative Wins (Evaluation)
+    # Plot 1: Cumulative Wins over games (Evaluation)
     plt.figure(figsize=(12, 6))
     for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
         df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
@@ -226,16 +238,17 @@ def plot_evaluation_results():
         wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
         plt.plot(rounds, wins_full, label=f"{label} Wins")
 
-    plt.xlabel("Game")
+    plt.xlabel("Rounds")
     plt.ylabel("Cumulative Wins")
-    plt.title("Evaluation: Cumulative Wins Over Games")
+    plt.title("Evaluation: Cumulative Wins Over Rounds")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("Plots/evaluation_cumulative_wins.png")
+    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_wins.png")
+    plt.savefig(plots_path)
     plt.show()
 
-    # Plot 2: Cumulative Returns (Evaluation)
+    # Plot 3: Cumulative Returns (Evaluation)
     plt.figure(figsize=(12, 6))
     for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
         df_player = df_eval[df_eval["Player"] == player_id]
@@ -243,13 +256,14 @@ def plot_evaluation_results():
         returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
         plt.plot(rounds, returns_full, label=f"{label} Return", linestyle="--")
 
-    plt.xlabel("Game")
+    plt.xlabel("Rounds")
     plt.ylabel("Cumulative Return")
-    plt.title("Evaluation: Cumulative Return Over Games")
+    plt.title("Evaluation: Cumulative Return Over Rounds")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("Plots/evaluation_cumulative_returns.png")
+    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_returns.png")
+    plt.savefig(plots_path)
     plt.show()
 
 
@@ -272,7 +286,8 @@ def plot_training_results():
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("Plots/training_cumulative_wins.png")
+    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_wins.png")
+    plt.savefig(plots_path)
     plt.show()
 
     # Plot 2: Cumulative Returns (Training)
@@ -289,7 +304,8 @@ def plot_training_results():
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("Plots/training_cumulative_returns.png")
+    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_returns.png")
+    plt.savefig(plots_path)
     plt.show()
 
 def plot_return_distributions():
@@ -344,7 +360,8 @@ def plot_return_distributions():
 
         # Save and show
         filename = f"return_distribution_{player_labels[player_id].lower().replace(' ', '_')}.png"
-        plt.savefig(f"Plots/{filename}")
+        plots_path = os.path.join(PLOTS_DIR, filename)
+        plt.savefig(plots_path)
         plt.show()
 
 
@@ -363,5 +380,4 @@ if __name__ == "__main__":
     # Win/Loss Distribution of Stakes
     plot_return_distributions()
 
-
-
+    print("The end")
