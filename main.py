@@ -2,6 +2,7 @@ import os
 import csv
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 from collections import defaultdict
 
 from Game.environment import Environment
@@ -13,7 +14,7 @@ from Agent.optimal_agent import OptimalAgent
 
 from definitions import CSV_DIR, PLOTS_DIR
 
-def print_environment_state_true():
+def print_environment_state_true(environment):
     print("")
     print("### Players ###")
     for player_index, player in enumerate(environment.game_manager.players):  # Track player index
@@ -78,6 +79,7 @@ def run_simulation(rounds_to_simulate=1000000):
     cumulative_return = {0: 0, 1: 0, 2: 0}
     win_tracking = {0: [], 1: [], 2: []}
     cumulative_wins = {0: 0, 1: 0, 2: 0}
+    action_log = []
 
     for round_num in range(1, rounds_to_simulate + 1):
         print(f"\n=== Simulation Round {round_num} ===")
@@ -103,14 +105,16 @@ def run_simulation(rounds_to_simulate=1000000):
                         )
 
                     round_history_output = environment.input(player_index, hand_index, action=action)
+                    action_log.append([round_num, player_index, hand_index, action])
+
 
                     if round_history_output:
-                        print(">>> Round completed ✅")
+                        print(">>> Round completed")
 
                         # Q-table updates
                         player_0_history = [entry for entry in round_history_output if entry[0] == 0]
                         if player_0_history:
-                            print(f"🧠 Updating Q-table for Player 0")
+                            print(f"Updating Q-table for Player 0")
                             q_learning_agent.process_round_history_for_q_values(player_0_history)
 
                         # Track outcomes
@@ -149,8 +153,16 @@ def run_simulation(rounds_to_simulate=1000000):
         writer.writerow(["Round", "Player", "Hand", "Outcome", "Return"])
         writer.writerows(round_outcomes)
 
-    # ✅ Save the Q-table at the end of simulation
+    # Save the Q-table at the end of simulation
     save_q_tables_to_csv(q_learning_agent)
+
+    # Save action log to CSV
+    actions_csv = os.path.join(CSV_DIR, "actions.csv")
+    with open(actions_csv, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Round", "Player", "Hand", "Action"])
+        writer.writerows(action_log)
+
 
     print("Simulation complete. Results saved.")
     return q_learning_agent
@@ -190,7 +202,7 @@ def run_evaluation(q_learning_agent, num_games):
                     round_history_output = environment.input(player_index, hand_index, action=action)
 
                     if round_history_output:
-                        print(">>> Evaluation Round completed ✅")
+                        print(">>> Evaluation Round completed")
                         # Record the result but do NOT update Q-values
                         for p_idx, h_idx, hand_history, outcome, _ in round_history_output:
                             if not hand_history:
@@ -222,7 +234,7 @@ def run_evaluation(q_learning_agent, num_games):
         writer.writerow(["Game", "Player", "Hand", "Outcome", "Return"])
         writer.writerows(results)
 
-    print("✅ Evaluation complete. Results saved to 'evaluation_results.csv'")
+    print("Evaluation complete. Results saved to 'evaluation_results.csv'")
 
 def plot_evaluation_results():
     csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
@@ -365,19 +377,83 @@ def plot_return_distributions():
         plt.show()
 
 
+def plot_q_value_convergence(q_learning_agent):
+    convergence_data = q_learning_agent.q_value_changes
+    plt.figure(figsize=(12, 6))
+    plt.plot(convergence_data, label='Avg Q-Value Change')
+    plt.xlabel('Q-Update Iteration')
+    plt.ylabel('Average ΔQ')
+    plt.title('Q-Value Convergence Over Time')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    path = os.path.join(PLOTS_DIR, 'q_value_convergence.png')
+    plt.savefig(path)
+    plt.show()
+
+def plot_action_distribution():
+    csv_path = os.path.join(CSV_DIR, "actions.csv")
+    df = pd.read_csv(csv_path)
+
+    action_labels = {0: "Stand", 1: "Hit", 2: "Double", 3: "Split", 4: "Insurance"}
+    df["ActionLabel"] = df["Action"].map(action_labels)
+
+    plt.figure(figsize=(12, 6))
+    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
+        df_player = df[df["Player"] == player_id]
+        action_counts = df_player["ActionLabel"].value_counts(normalize=True).sort_index()
+        plt.bar([f"{label} - {a}" for a in action_counts.index], action_counts.values, label=label)
+
+    plt.ylabel("Proportion of Actions")
+    plt.title("Action Distribution per Agent")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.grid(True)
+    plots_path = os.path.join(PLOTS_DIR, "action_distribution.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+
+def plot_state_value_heatmap(q_learning_agent):
+    # Assuming state = ((player_value,), dealer_card), we reduce to 2D
+    q_values = defaultdict(list)
+    
+    for (state, action), q in q_learning_agent.q_tables[0].items():
+        player_hand = state[0][0] if state[0] else 0
+        dealer_card = state[1]
+        q_values[(player_hand, dealer_card)].append(q)
+
+    avg_q_values = {(k[0], k[1]): sum(v)/len(v) for k, v in q_values.items()}
+
+    data = pd.DataFrame([{'Player': k[0], 'Dealer': k[1], 'Q': v} for k, v in avg_q_values.items()])
+    heatmap_data = data.pivot(index='Player', columns='Dealer', values='Q')
+
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
+    plt.title("State-Value Heatmap (Avg Q-Value)")
+    plt.xlabel("Dealer Showing")
+    plt.ylabel("Player Hand Value")
+    plt.tight_layout()
+    path = os.path.join(PLOTS_DIR, 'state_value_heatmap.png')
+    plt.savefig(path)
+    plt.show()
 
 if __name__ == "__main__":
     # Training
     # q_learning_agent = run_simulation(rounds_to_simulate=1000000)
-    q_learning_agent = run_simulation(rounds_to_simulate=1000)
+    q_learning_agent = run_simulation(rounds_to_simulate=100000)
     plot_training_results()
 
     # Evaluation
     # run_evaluation(q_learning_agent, num_games=10000)
-    run_evaluation(q_learning_agent, num_games=100)
+    run_evaluation(q_learning_agent, num_games=10000)
     plot_evaluation_results()
 
     # Win/Loss Distribution of Stakes
     plot_return_distributions()
+    
+    plot_q_value_convergence(q_learning_agent)
+    plot_action_distribution()
+    plot_state_value_heatmap(q_learning_agent)
 
     print("The end")
