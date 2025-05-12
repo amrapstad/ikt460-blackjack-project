@@ -1,0 +1,296 @@
+import os, csv
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from collections import defaultdict
+
+from Agents.q_learning import Q_Learning
+from Game.environment import Environment
+
+from definitions import CSV_DIR, PLOTS_DIR
+
+
+# Players is the whole player setup: [(agent_class, "agent name", ...)]
+def run_evaluation(players, num_games=10000):
+    print(f"\n🔍 Running evaluation over {num_games} games...")
+
+    player_count = len(players)
+    environment = Environment(deck_count=4, players=player_count)
+
+    """
+    Example:
+    players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
+    Q-agent: players[0][0]
+    """
+
+    results = []
+
+    for game_num in range(1, num_games + 1):
+        print(f"\n--- Evaluation Game {game_num} ---")
+        round_finished = False
+
+        while not round_finished:
+            for player_index, player in enumerate(environment.game_manager.players):
+                for hand_index, hand in enumerate(player.hands):
+                    if hand.is_standing:
+                        continue
+
+                    if players[player_index][1] == "q-learning":
+                        action = players[player_index][0].choose_action(
+                            player_index, hand, environment.game_manager.dealer.face_up_card
+                        )
+                    elif players[player_index][1] == "optimal":
+                        action = players[player_index][0].choose_action(
+                            hand, environment.game_manager.dealer.face_up_card
+                        )
+                    elif players[player_index][1] == "random":
+                        action = players[player_index][0].choose_action(
+                            hand, environment.game_manager.dealer.face_up_card
+                        )
+
+                    round_history_output = environment.input(player_index, hand_index, action=action)
+
+                    if round_history_output:
+                        print(">>> Evaluation Round completed")
+                        # Record the result but do NOT update Q-values
+                        for p_idx, h_idx, hand_history, outcome, _ in round_history_output:
+                            if not hand_history:
+                                continue
+                            stake = hand_history[-1][1]
+                            if outcome == "WIN":
+                                result = stake
+                            elif outcome == "LOSE":
+                                result = -stake
+                            else:
+                                result = 0
+                            results.append([game_num, p_idx, h_idx, outcome, result])
+
+                        round_finished = True
+                        break
+                if round_finished:
+                    break
+
+    # Save evaluation results
+    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+    with open(csv_path, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Game", "Player", "Hand", "Outcome", "Return"])
+        writer.writerows(results)
+
+    print("Evaluation complete. Results saved to 'evaluation_results.csv'")
+
+
+# Players is the whole player setup: [(agent_class, "agent name", ...)]
+def plot_training_results(players):
+    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
+    df = pd.read_csv(csv_path)
+    rounds = pd.Series(range(1, df["Round"].max() + 1), name="Round")
+
+    # Plot 1: Cumulative Wins (Training)
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
+        wins_cumulative = df_wins.groupby("Round").size().cumsum()
+        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, wins_full, label=f"{player[1]} Wins")
+
+    plt.xlabel("Round")
+    plt.ylabel("Cumulative Wins")
+    plt.title("Training: Cumulative Wins Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_wins.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+    # Plot 2: Cumulative Returns (Training)
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df[df["Player"] == player_id]
+        returns = df_player.groupby("Round")["Return"].sum().cumsum()
+        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, returns_full, label=f"{player[1]} Return", linestyle="--")
+
+    plt.xlabel("Round")
+    plt.ylabel("Cumulative Return")
+    plt.title("Training: Cumulative Return Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_returns.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+
+# Players is the whole player setup: [(agent_class, "agent name", ...)]
+def plot_evaluation_results(players):
+    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+    df_eval = pd.read_csv(csv_path)
+
+    rounds = pd.Series(range(1, df_eval["Game"].max() + 1), name="Game")
+
+    """
+    Example:
+    players = [(Q_learning(), "q-learning"), (optimal_agent(), "optimal"), (random_agent(), "random")]
+    Q-agent: players[0][0]
+    """
+
+    # Plot 1: Cumulative Wins over games (Evaluation)
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
+        wins_cumulative = df_wins.groupby("Game").size().cumsum()
+        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, wins_full, label=f"{player[1]} Wins")
+
+    plt.xlabel("Rounds")
+    plt.ylabel("Cumulative Wins")
+    plt.title("Evaluation: Cumulative Wins Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_wins.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+    # Plot 2: Cumulative Returns (Evaluation)
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df_eval[df_eval["Player"] == player_id]
+        returns = df_player.groupby("Game")["Return"].sum().cumsum()
+        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, returns_full, label=f"{player[1]} Return", linestyle="--")
+
+    plt.xlabel("Rounds")
+    plt.ylabel("Cumulative Return")
+    plt.title("Evaluation: Cumulative Return Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_returns.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+
+# Players is the whole player setup: [(agent_class, "agent name", ...)]
+def plot_return_distributions(players):
+    # Define bin edges and labels
+    bin_edges = [-float("inf"), -40, -20, -10, -5, 0, 5, 10, 20, 40, float("inf")]
+    bin_labels = ["< -40", "-40", "-20", "-10", "-5", "0", "5", "10", "20", "40+"]
+
+    def prepare_distribution(df, label):
+        df["Bin"] = pd.cut(df["Return"], bins=bin_edges, labels=bin_labels, right=False)
+        df["Source"] = label
+        return df
+
+    # Load and label the data
+    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
+    df_train = pd.read_csv(csv_path)
+    df_train = prepare_distribution(df_train, "Training")
+
+    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+    df_eval = pd.read_csv(csv_path)
+    df_eval = prepare_distribution(df_eval, "Evaluation")
+
+    # Combine both
+    df_all = pd.concat([df_train, df_eval], ignore_index=True)
+
+    for player_id, player in enumerate(players):
+        df_player = df_all[df_all["Player"] == player_id]
+
+        # Group by Bin and Source (training/eval)
+        grouped = df_player.groupby(["Bin", "Source"], observed=False).size().unstack(fill_value=0).reindex(bin_labels)
+
+        # Plot
+        ax = grouped.plot(kind="bar", figsize=(12, 6), width=0.7)
+        name_string = player[1]
+        plt.title(f"{name_string.upper()} agent - Return Distribution (Training vs Evaluation)")
+        plt.xlabel("Return Range")
+        plt.ylabel("Count")
+        plt.xticks(rotation=45)
+        plt.grid(True)
+        plt.tight_layout()
+
+        # Add value labels above each bar
+        for container in ax.containers:
+            for bar in container:
+                height = bar.get_height()
+                if height > 0:
+                    ax.annotate(f"{int(height)}",
+                                xy=(bar.get_x() + bar.get_width() / 2, height),
+                                xytext=(0, 3),
+                                textcoords="offset points",
+                                ha='center', va='bottom', fontsize=9)
+
+        # Save and show
+        filename = f"return_distribution_{player[1].lower().replace(' ', '_')}.png"
+        plots_path = os.path.join(PLOTS_DIR, filename)
+        plt.savefig(plots_path)
+        plt.show()
+
+
+def plot_q_value_convergence(q_agent: Q_Learning):
+    convergence_data = q_agent.q_value_changes
+    plt.figure(figsize=(12, 6))
+    plt.plot(convergence_data, label='Avg Q-Value Change')
+    plt.xlabel('Q-Update Iteration')
+    plt.ylabel('Average ΔQ')
+    plt.title('Q-Value Convergence Over Time')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    path = os.path.join(PLOTS_DIR, 'q_value_convergence.png')
+    plt.savefig(path)
+    plt.show()
+
+
+# Players is the whole player setup: [(agent_class, "agent name", ...)]
+def plot_action_distribution(players):
+    csv_path = os.path.join(CSV_DIR, "actions.csv")
+    df = pd.read_csv(csv_path)
+
+    action_labels = {0: "Stand", 1: "Hit", 2: "Double", 3: "Split", 4: "Insurance"}
+    df["ActionLabel"] = df["Action"].map(action_labels)
+
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df[df["Player"] == player_id]
+        action_counts = df_player["ActionLabel"].value_counts(normalize=True).sort_index()
+        name_string = str(player[1])
+        plt.bar([f"{name_string.upper()} - {a}" for a in action_counts.index], action_counts.values, label=player[1])
+
+    plt.ylabel("Proportion of Actions")
+    plt.title("Action Distribution per Agents")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.grid(True)
+    plots_path = os.path.join(PLOTS_DIR, "action_distribution.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+
+def plot_state_value_heatmap(q_agent: Q_Learning):
+    # Assuming state = ((player_value,), dealer_card), we reduce to 2D
+    q_values = defaultdict(list)
+
+    for (state, action), q in q_agent.q_tables[0].items():
+        player_hand = state[0][0] if state[0] else 0
+        dealer_card = state[1]
+        q_values[(player_hand, dealer_card)].append(q)
+
+    avg_q_values = {(k[0], k[1]): sum(v) / len(v) for k, v in q_values.items()}
+
+    data = pd.DataFrame([{'Player': k[0], 'Dealer': k[1], 'Q': v} for k, v in avg_q_values.items()])
+    heatmap_data = data.pivot(index='Player', columns='Dealer', values='Q')
+
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
+    plt.title("State-Value Heatmap (Avg Q-Value)")
+    plt.xlabel("Dealer Showing")
+    plt.ylabel("Player Hand Value")
+    plt.tight_layout()
+    path = os.path.join(PLOTS_DIR, 'state_value_heatmap.png')
+    plt.savefig(path)
+    plt.show()
