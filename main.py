@@ -52,6 +52,7 @@ def print_environment_state_player_view(environment):
     print("### Overviews ###")
     print(f'Total available cards: {len(environment.game_manager.available_cards)}')
 
+
 def save_q_tables_to_csv(q_learning_agent):
     for player_index, q_table in q_learning_agent.q_tables.items():
         filename = f"q_table_player_{player_index + 1}.csv"
@@ -258,61 +259,18 @@ def run_evaluation(players, num_games=10000):
 
     print("Evaluation complete. Results saved to 'evaluation_results.csv'")
 
-def plot_evaluation_results():
-    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
-    df_eval = pd.read_csv(csv_path)
-
-    rounds = pd.Series(range(1, df_eval["Game"].max() + 1), name="Game")
-
-    # Plot 1: Cumulative Wins over games (Evaluation)
-    plt.figure(figsize=(12, 6))
-    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
-        df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
-        wins_cumulative = df_wins.groupby("Game").size().cumsum()
-        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, wins_full, label=f"{label} Wins")
-
-    plt.xlabel("Rounds")
-    plt.ylabel("Cumulative Wins")
-    plt.title("Evaluation: Cumulative Wins Over Rounds")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_wins.png")
-    plt.savefig(plots_path)
-    plt.show()
-
-    # Plot 3: Cumulative Returns (Evaluation)
-    plt.figure(figsize=(12, 6))
-    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
-        df_player = df_eval[df_eval["Player"] == player_id]
-        returns = df_player.groupby("Game")["Return"].sum().cumsum()
-        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, returns_full, label=f"{label} Return", linestyle="--")
-
-    plt.xlabel("Rounds")
-    plt.ylabel("Cumulative Return")
-    plt.title("Evaluation: Cumulative Return Over Rounds")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_returns.png")
-    plt.savefig(plots_path)
-    plt.show()
-
-
-def plot_training_results():
+def plot_training_results(players):
     csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
     df = pd.read_csv(csv_path)
     rounds = pd.Series(range(1, df["Round"].max() + 1), name="Round")
 
     # Plot 1: Cumulative Wins (Training)
     plt.figure(figsize=(12, 6))
-    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
+    for player_id, player in players:
         df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Round").size().cumsum()
         wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, wins_full, label=f"{label} Wins")
+        plt.plot(rounds, wins_full, label=f"{player[1]} Wins")
 
     plt.xlabel("Round")
     plt.ylabel("Cumulative Wins")
@@ -326,11 +284,11 @@ def plot_training_results():
 
     # Plot 2: Cumulative Returns (Training)
     plt.figure(figsize=(12, 6))
-    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
+    for player_id, player in players:
         df_player = df[df["Player"] == player_id]
         returns = df_player.groupby("Round")["Return"].sum().cumsum()
         returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, returns_full, label=f"{label} Return", linestyle="--")
+        plt.plot(rounds, returns_full, label=f"{player[1]} Return", linestyle="--")
 
     plt.xlabel("Round")
     plt.ylabel("Cumulative Return")
@@ -341,6 +299,56 @@ def plot_training_results():
     plots_path = os.path.join(PLOTS_DIR, "training_cumulative_returns.png")
     plt.savefig(plots_path)
     plt.show()
+
+
+def plot_evaluation_results(players):
+    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+    df_eval = pd.read_csv(csv_path)
+
+    rounds = pd.Series(range(1, df_eval["Game"].max() + 1), name="Game")
+
+    """
+    Example:
+    players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
+    Q-agent: players[0][0]
+    """
+
+    # Plot 1: Cumulative Wins over games (Evaluation)
+    plt.figure(figsize=(12, 6))
+    for player_id, player in players:
+        df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
+        wins_cumulative = df_wins.groupby("Game").size().cumsum()
+        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, wins_full, label=f"{player[1]} Wins")
+
+    plt.xlabel("Rounds")
+    plt.ylabel("Cumulative Wins")
+    plt.title("Evaluation: Cumulative Wins Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_wins.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+    # Plot 2: Cumulative Returns (Evaluation)
+    plt.figure(figsize=(12, 6))
+    for player_id, player in players:
+        df_player = df_eval[df_eval["Player"] == player_id]
+        returns = df_player.groupby("Game")["Return"].sum().cumsum()
+        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, returns_full, label=f"{player[1]} Return", linestyle="--")
+
+    plt.xlabel("Rounds")
+    plt.ylabel("Cumulative Return")
+    plt.title("Evaluation: Cumulative Return Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_returns.png")
+    plt.savefig(plots_path)
+    plt.show()
+
 
 def plot_return_distributions():
     # Define bin edges and labels
@@ -466,10 +474,10 @@ if __name__ == "__main__":
 
     # Evaluation
     """
-   Example:
-   players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
-   Q-agent: players[0][0]
-   """
+    Example:
+    players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
+    Q-agent: players[0][0]
+    """
     eval_players = [(q_learning_agent, "q-learning"), (OptimalAgent(), "optimal"), (RandomAgent(), "random")]
 
     run_evaluation(eval_players, num_games=100)
