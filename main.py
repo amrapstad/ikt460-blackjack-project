@@ -187,7 +187,8 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1
         writer.writerows(action_log)
 
     print("Simulation complete. Results saved.")
-    return players[q_agent_pos][0]
+
+    return players
 
 
 # Players: Array of different types of agents in a specific order
@@ -266,7 +267,7 @@ def plot_training_results(players):
 
     # Plot 1: Cumulative Wins (Training)
     plt.figure(figsize=(12, 6))
-    for player_id, player in players:
+    for player_id, player in enumerate(players):
         df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Round").size().cumsum()
         wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
@@ -284,7 +285,7 @@ def plot_training_results(players):
 
     # Plot 2: Cumulative Returns (Training)
     plt.figure(figsize=(12, 6))
-    for player_id, player in players:
+    for player_id, player in enumerate(players):
         df_player = df[df["Player"] == player_id]
         returns = df_player.groupby("Round")["Return"].sum().cumsum()
         returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
@@ -309,13 +310,13 @@ def plot_evaluation_results(players):
 
     """
     Example:
-    players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
+    players = [(Q_learning(), "q-learning"), (optimal_agent(), "optimal"), (random_agent(), "random")]
     Q-agent: players[0][0]
     """
 
     # Plot 1: Cumulative Wins over games (Evaluation)
     plt.figure(figsize=(12, 6))
-    for player_id, player in players:
+    for player_id, player in enumerate(players):
         df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Game").size().cumsum()
         wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
@@ -333,7 +334,7 @@ def plot_evaluation_results(players):
 
     # Plot 2: Cumulative Returns (Evaluation)
     plt.figure(figsize=(12, 6))
-    for player_id, player in players:
+    for player_id, player in enumerate(players):
         df_player = df_eval[df_eval["Player"] == player_id]
         returns = df_player.groupby("Game")["Return"].sum().cumsum()
         returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
@@ -350,7 +351,7 @@ def plot_evaluation_results(players):
     plt.show()
 
 
-def plot_return_distributions():
+def plot_return_distributions(players):
     # Define bin edges and labels
     bin_edges = [-float("inf"), -40, -20, -10, -5, 0, 5, 10, 20, 40, float("inf")]
     bin_labels = ["< -40", "-40", "-20", "-10", "-5", "0", "5", "10", "20", "40+"]
@@ -372,9 +373,7 @@ def plot_return_distributions():
     # Combine both
     df_all = pd.concat([df_train, df_eval], ignore_index=True)
 
-    player_labels = ["Q-Learning", "Random", "Optimal"]
-
-    for player_id in [0, 1, 2]:
+    for player_id, player in enumerate(players):
         df_player = df_all[df_all["Player"] == player_id]
 
         # Group by Bin and Source (training/eval)
@@ -382,7 +381,7 @@ def plot_return_distributions():
 
         # Plot
         ax = grouped.plot(kind="bar", figsize=(12, 6), width=0.7)
-        plt.title(f"{player_labels[player_id]} Return Distribution (Training vs Evaluation)")
+        plt.title(f"{player[1]} agent - Return Distribution (Training vs Evaluation)")
         plt.xlabel("Return Range")
         plt.ylabel("Count")
         plt.xticks(rotation=45)
@@ -401,7 +400,7 @@ def plot_return_distributions():
                                 ha='center', va='bottom', fontsize=9)
 
         # Save and show
-        filename = f"return_distribution_{player_labels[player_id].lower().replace(' ', '_')}.png"
+        filename = f"return_distribution_{player[1].lower().replace(' ', '_')}.png"
         plots_path = os.path.join(PLOTS_DIR, filename)
         plt.savefig(plots_path)
         plt.show()
@@ -469,19 +468,22 @@ def plot_state_value_heatmap(q_learning_agent):
     plt.show()
 
 if __name__ == "__main__":
-    q_learning_agent = run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1000)
-    plot_training_results()
-
-    # Evaluation
     """
     Example:
-    players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
-    Q-agent: players[0][0]
+        players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
+        Q-agent: players[0][0]
+        "Q-agent": players[0][1]
     """
-    eval_players = [(q_learning_agent, "q-learning"), (OptimalAgent(), "optimal"), (RandomAgent(), "random")]
 
+    # Training
+    q_learning_result = run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1000)
+    plot_training_results(q_learning_result)
+    q_learning_agent = q_learning_result[0][0]
+
+    # Evaluation
+    eval_players = [(q_learning_agent, "q-learning"), (OptimalAgent(), "optimal"), (RandomAgent(), "random")]
     run_evaluation(eval_players, num_games=100)
-    plot_evaluation_results()
+    plot_evaluation_results(eval_players)
 
     # Win/Loss Distribution of Stakes
     plot_return_distributions()
