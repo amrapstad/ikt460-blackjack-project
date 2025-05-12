@@ -406,8 +406,8 @@ def plot_return_distributions(players):
         plt.show()
 
 
-def plot_q_value_convergence(q_learning_agent):
-    convergence_data = q_learning_agent.q_value_changes
+def plot_q_value_convergence(q_agent):
+    convergence_data = q_agent.q_value_changes
     plt.figure(figsize=(12, 6))
     plt.plot(convergence_data, label='Avg Q-Value Change')
     plt.xlabel('Q-Update Iteration')
@@ -420,7 +420,7 @@ def plot_q_value_convergence(q_learning_agent):
     plt.savefig(path)
     plt.show()
 
-def plot_action_distribution():
+def plot_action_distribution(players):
     csv_path = os.path.join(CSV_DIR, "actions.csv")
     df = pd.read_csv(csv_path)
 
@@ -428,10 +428,10 @@ def plot_action_distribution():
     df["ActionLabel"] = df["Action"].map(action_labels)
 
     plt.figure(figsize=(12, 6))
-    for player_id, label in zip([0, 1, 2], ["Q-Learning", "Random", "Optimal"]):
+    for player_id, player in enumerate(players):
         df_player = df[df["Player"] == player_id]
         action_counts = df_player["ActionLabel"].value_counts(normalize=True).sort_index()
-        plt.bar([f"{label} - {a}" for a in action_counts.index], action_counts.values, label=label)
+        plt.bar([f"{player[1]} - {a}" for a in action_counts.index], action_counts.values, label=player[1])
 
     plt.ylabel("Proportion of Actions")
     plt.title("Action Distribution per Agent")
@@ -443,11 +443,11 @@ def plot_action_distribution():
     plt.show()
 
 
-def plot_state_value_heatmap(q_learning_agent):
+def plot_state_value_heatmap(q_agent):
     # Assuming state = ((player_value,), dealer_card), we reduce to 2D
     q_values = defaultdict(list)
     
-    for (state, action), q in q_learning_agent.q_tables[0].items():
+    for (state, action), q in q_agent.q_tables[0].items():
         player_hand = state[0][0] if state[0] else 0
         dealer_card = state[1]
         q_values[(player_hand, dealer_card)].append(q)
@@ -486,10 +486,10 @@ if __name__ == "__main__":
     plot_evaluation_results(eval_players)
 
     # Win/Loss Distribution of Stakes
-    plot_return_distributions()
+    plot_return_distributions(eval_players)
     
     plot_q_value_convergence(q_learning_agent)
-    plot_action_distribution()
+    plot_action_distribution(eval_players)
     plot_state_value_heatmap(q_learning_agent)
 
     print("The end")
