@@ -189,11 +189,18 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1
     return players[q_agent_pos][0]
 
 
-def run_evaluation(q_learning_agent, num_games):
+# Players: Array of different types of agents in a specific order
+def run_evaluation(players, num_games=10000):
     print(f"\n🔍 Running evaluation over {num_games} games...")
-    environment = Environment(deck_count=4, players=3)
-    random_agent = RandomAgent()
-    optimal_agent = OptimalAgent()
+
+    player_count = len(players)
+    environment = Environment(deck_count=4, players=player_count)
+
+    """
+    Example:
+    players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
+    Q-agent: players[0][0]
+    """
 
     results = []
 
@@ -207,16 +214,16 @@ def run_evaluation(q_learning_agent, num_games):
                     if hand.is_standing:
                         continue
 
-                    if player_index == 0:
-                        action = q_learning_agent.choose_action(
+                    if players[player_index][1] == "q-learning":
+                        action = players[player_index][0].choose_action(
                             player_index, hand, environment.game_manager.dealer.face_up_card
                         )
-                    elif player_index == 1:
-                        action = random_agent.choose_action(
+                    elif players[player_index][1] == "optimal":
+                        action = players[player_index][0].choose_action(
                             hand, environment.game_manager.dealer.face_up_card
                         )
-                    elif player_index == 2:
-                        action = optimal_agent.choose_action(
+                    elif players[player_index][1] == "random":
+                        action = players[player_index][0].choose_action(
                             hand, environment.game_manager.dealer.face_up_card
                         )
 
@@ -454,19 +461,18 @@ def plot_state_value_heatmap(q_learning_agent):
     plt.show()
 
 if __name__ == "__main__":
-    # Training
-    q_learning_agent = Q_Learning()  # Index = 0
-    random_agent = RandomAgent()  # Index = 1
-    optimal_agent = OptimalAgent()  # Index = 2
-
-    agents = [q_learning_agent, random_agent, optimal_agent]
-
     q_learning_agent = run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1000)
     plot_training_results()
 
     # Evaluation
-    # run_evaluation(q_learning_agent, num_games=10000)
-    run_evaluation(q_learning_agent, num_games=10000)
+    """
+   Example:
+   players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
+   Q-agent: players[0][0]
+   """
+    eval_players = [(q_learning_agent, "q-learning"), (OptimalAgent(), "optimal"), (RandomAgent(), "random")]
+
+    run_evaluation(eval_players, num_games=100)
     plot_evaluation_results()
 
     # Win/Loss Distribution of Stakes
