@@ -67,18 +67,47 @@ def save_q_tables_to_csv(q_learning_agent):
                 dealer_card_str = f"{dealer_value}"
                 writer.writerow([player_hand_str, dealer_card_str, action, round(q_value, 4)])
 
-def run_simulation(rounds_to_simulate=1000000):
-    environment = Environment(deck_count=4, players=3)
-    q_learning_agent = Q_Learning() # Index = 0
-    random_agent = RandomAgent() # Index = 1
-    optimal_agent = OptimalAgent() # Index = 2
 
+# Setup:
+# q_learning_pos: 0-4 (left to right)
+# This only trains one q-learning agent
+# Takes in number of players and q-agent position
+# 2 to 4 dummy agents
+# Requires at least one random and one optimal agent
+def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1000000):
+    environment = Environment(deck_count=4, players=num_players)
+
+    players = []
+    optimal_added = False
+
+    for i in range(num_players):
+        if q_agent_pos == i:
+            players.append((Q_Learning(), "q-learning"))
+            continue
+        if not optimal_added:
+            optimal_added = True
+            players.append((OptimalAgent(), "optimal"))
+            continue
+        players.append((RandomAgent(), "random"))
 
     round_outcomes = []
-    return_tracking = {0: [], 1: [], 2: []}
-    cumulative_return = {0: 0, 1: 0, 2: 0}
-    win_tracking = {0: [], 1: [], 2: []}
-    cumulative_wins = {0: 0, 1: 0, 2: 0}
+
+    return_tracking = { }
+    for i in range(num_players):
+        return_tracking[i] = []
+
+    cumulative_return = { }
+    for i in range(num_players):
+        cumulative_return[i] = 0
+
+    win_tracking = { }
+    for i in range(num_players):
+        win_tracking[i] = []
+
+    cumulative_wins = { }
+    for i in range(num_players):
+        cumulative_wins[i] = 0
+
     action_log = []
 
     for round_num in range(1, rounds_to_simulate + 1):
@@ -91,31 +120,30 @@ def run_simulation(rounds_to_simulate=1000000):
                     if hand.is_standing:
                         continue
 
-                    if player_index == 0:
-                        action = q_learning_agent.choose_action(
+                    if players[player_index][1] == "q-learning":
+                        action = players[player_index][0].choose_action(
                             player_index, hand, environment.game_manager.dealer.face_up_card
                         )
-                    elif player_index == 1:
-                        action = random_agent.choose_action(
+                    elif players[player_index][1] == "optimal":
+                        action = players[player_index][0].choose_action(
                             hand, environment.game_manager.dealer.face_up_card
                         )
-                    elif player_index == 2:
-                        action = optimal_agent.choose_action(
+                    elif players[player_index][1] == "random":
+                        action = players[player_index][0].choose_action(
                             hand, environment.game_manager.dealer.face_up_card
                         )
 
                     round_history_output = environment.input(player_index, hand_index, action=action)
                     action_log.append([round_num, player_index, hand_index, action])
 
-
                     if round_history_output:
                         print(">>> Round completed")
 
                         # Q-table updates
-                        player_0_history = [entry for entry in round_history_output if entry[0] == 0]
-                        if player_0_history:
-                            print(f"Updating Q-table for Player 0")
-                            q_learning_agent.process_round_history_for_q_values(player_0_history)
+                        q_agent_history = [entry for entry in round_history_output if entry[q_agent_pos] == 0]
+                        if q_agent_history:
+                            print(f"Updating Q-table for Q-agent")
+                            players[q_agent_pos][0].process_round_history_for_q_values(q_agent_history)
 
                         # Track outcomes
                         for p_idx, h_idx, hand_history, outcome, _ in round_history_output:
@@ -140,12 +168,6 @@ def run_simulation(rounds_to_simulate=1000000):
                 if round_finished:
                     break
 
-    # Count number of hands for each player
-    hands_played = {0: 0, 1: 0, 2: 0}
-    for _round in round_outcomes:
-        p_idx = _round[1] # Gets p_idx from current entry in round_outcomes
-        hands_played[p_idx] += 1
-
     # Save round outcomes
     csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
     with open(csv_path, mode="w", newline="") as file:
@@ -154,7 +176,7 @@ def run_simulation(rounds_to_simulate=1000000):
         writer.writerows(round_outcomes)
 
     # Save the Q-table at the end of simulation
-    save_q_tables_to_csv(q_learning_agent)
+    save_q_tables_to_csv(players[q_agent_pos][0])
 
     # Save action log to CSV
     actions_csv = os.path.join(CSV_DIR, "actions.csv")
@@ -163,9 +185,8 @@ def run_simulation(rounds_to_simulate=1000000):
         writer.writerow(["Round", "Player", "Hand", "Action"])
         writer.writerows(action_log)
 
-
     print("Simulation complete. Results saved.")
-    return q_learning_agent
+    return players[q_agent_pos][0]
 
 
 def run_evaluation(q_learning_agent, num_games):
@@ -220,12 +241,6 @@ def run_evaluation(q_learning_agent, num_games):
                         break
                 if round_finished:
                     break
-
-    # Count number of hands for each player
-    hands_played = {0: 0, 1: 0, 2: 0}
-    for _round in results:
-        p_idx = _round[1]  # Gets p_idx from current entry in round_outcomes
-        hands_played[p_idx] += 1
 
     # Save evaluation results
     csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
@@ -440,8 +455,13 @@ def plot_state_value_heatmap(q_learning_agent):
 
 if __name__ == "__main__":
     # Training
-    # q_learning_agent = run_simulation(rounds_to_simulate=1000000)
-    q_learning_agent = run_simulation(rounds_to_simulate=100000)
+    q_learning_agent = Q_Learning()  # Index = 0
+    random_agent = RandomAgent()  # Index = 1
+    optimal_agent = OptimalAgent()  # Index = 2
+
+    agents = [q_learning_agent, random_agent, optimal_agent]
+
+    q_learning_agent = run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1000)
     plot_training_results()
 
     # Evaluation
