@@ -10,7 +10,7 @@ COPY requirements.txt .
 # Install the necessary packages
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY Agent/ . 
+COPY Agents/ .
 COPY Game/ .
 
 # Expose the port the app runs on

@@ -1,5 +1,5 @@
 import pandas as pd
-from Agent.optimal_agent import OptimalAgent
+from Agents.optimal_agent import OptimalAgent
 from Game.card import Card, Suit
 from Game.hand import Hand
 
