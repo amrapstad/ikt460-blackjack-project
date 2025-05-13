@@ -75,41 +75,20 @@ def run_evaluation(players, num_games=10000):
     print("Evaluation complete. Results saved to 'evaluation_results.csv'")
 
 
+# Players is the whole player setup: [agent_class, ...]
 def plot_evaluation_results(players, window_size=50):
-    import os
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
     csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
     df_eval = pd.read_csv(csv_path)
     max_game = df_eval["Game"].max()
     games = pd.Series(range(1, max_game + 1), name="Game")
 
-    # Plot 1: Rolling Win Rate
-    plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
-        df_player = df_eval[df_eval["Player"] == player_id].copy()
-        df_player["IsWin"] = (df_player["Outcome"] == "WIN").astype(int)
-        win_series = df_player.groupby("Game")["IsWin"].sum().reindex(games, fill_value=0)
-        rolling_win_rate = win_series.rolling(window=window_size, min_periods=1).mean()
-        plt.plot(games, rolling_win_rate, label=f"{player[1]} Win Rate")
-
-    plt.xlabel("Game")
-    plt.ylabel(f"Win Rate (rolling window={window_size})")
-    plt.title(f"Evaluation: Rolling Win Rate Over {window_size} Games")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(os.path.join(PLOTS_DIR, f"evaluation_win_rate_{window_size}.png"))
-    plt.show()
-
-    # Plot 2: Cumulative Wins
+    # Plot 1: Cumulative Wins
     plt.figure(figsize=(12, 6))
     for player_id, player in enumerate(players):
         df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Game").size().cumsum()
         wins_full = wins_cumulative.reindex(games).ffill().fillna(0).astype(int)
-        plt.plot(games, wins_full, label=f"{player[1]} Wins")
+        plt.plot(games, wins_full, label=f"{player.agent_label.upper()} Wins")
 
     plt.xlabel("Game")
     plt.ylabel("Cumulative Wins")
@@ -120,13 +99,31 @@ def plot_evaluation_results(players, window_size=50):
     plt.savefig(os.path.join(PLOTS_DIR, "evaluation_cumulative_wins.png"))
     plt.show()
 
+    # Plot 2: Rolling Win Rate
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df_eval[df_eval["Player"] == player_id].copy()
+        df_player["IsWin"] = (df_player["Outcome"] == "WIN").astype(int)
+        win_series = df_player.groupby("Game")["IsWin"].sum().reindex(games, fill_value=0)
+        rolling_win_rate = win_series.rolling(window=window_size, min_periods=1).mean()
+        plt.plot(games, rolling_win_rate, label=f"{player.agent_label.upper()} Win Rate")
+
+    plt.xlabel("Game")
+    plt.ylabel(f"Win Rate (rolling window={window_size})")
+    plt.title(f"Evaluation: Rolling Win Rate Over {window_size} Games")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(PLOTS_DIR, f"evaluation_win_rate_{window_size}.png"))
+    plt.show()
+
     # Plot 3: Cumulative Returns
     plt.figure(figsize=(12, 6))
     for player_id, player in enumerate(players):
         df_player = df_eval[df_eval["Player"] == player_id]
         returns = df_player.groupby("Game")["Return"].sum().cumsum()
         returns_full = returns.reindex(games).ffill().fillna(0).astype(int)
-        plt.plot(games, returns_full, label=f"{player[1]} Return", linestyle="--")
+        plt.plot(games, returns_full, label=f"{player.agent_label.upper()} Return", linestyle="--")
 
     plt.xlabel("Game")
     plt.ylabel("Cumulative Return")
@@ -143,7 +140,7 @@ def plot_evaluation_results(players, window_size=50):
         df_player = df_eval[df_eval["Player"] == player_id]
         return_series = df_player.groupby("Game")["Return"].sum().reindex(games, fill_value=0)
         rolling_returns = return_series.rolling(window=window_size, min_periods=1).mean()
-        plt.plot(games, rolling_returns, label=f"{player[1]} Rolling Return")
+        plt.plot(games, rolling_returns, label=f"{player.agent_label.upper()} Rolling Return")
 
     plt.xlabel("Game")
     plt.ylabel(f"Avg Return (rolling window={window_size})")
