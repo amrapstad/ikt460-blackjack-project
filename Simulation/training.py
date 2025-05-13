@@ -6,7 +6,7 @@ from Agents.q_agent import QAgent
 from Agents.optimal_agent import OptimalAgent
 from Agents.random_agent import RandomAgent
 
-from definitions import CSV_DIR
+from definitions import CSV_DIR, PLOTS_DIR
 
 
 def save_q_tables_to_csv(q_learning_agent: QAgent):
@@ -141,3 +141,82 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1
     print("Simulation complete. Results saved.")
 
     return players
+
+def plot_training_results(players, window_size=50):
+    import os
+    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
+    df = pd.read_csv(csv_path)
+    max_round = df["Round"].max()
+    rounds = pd.Series(range(1, max_round + 1), name="Round")
+
+    # Plot 1: Rolling Win Rate
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df[df["Player"] == player_id].copy()
+        df_player["IsWin"] = (df_player["Outcome"] == "WIN").astype(int)
+        win_series = df_player.groupby("Round")["IsWin"].sum().reindex(rounds, fill_value=0)
+        rolling_win_rate = win_series.rolling(window=window_size, min_periods=1).mean()
+        plt.plot(rounds, rolling_win_rate, label=f"{player[1]} Win Rate")
+
+    plt.xlabel("Round")
+    plt.ylabel(f"Win Rate (rolling window={window_size})")
+    plt.title(f"Training: Rolling Win Rate Over {window_size} Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(PLOTS_DIR, f"training_win_rate_{window_size}.png"))
+    plt.show()
+
+    # Plot 2: Cumulative Wins
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
+        wins_cumulative = df_wins.groupby("Round").size().cumsum()
+        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, wins_full, label=f"{player[1]} Wins")
+
+    plt.xlabel("Round")
+    plt.ylabel("Cumulative Wins")
+    plt.title("Training: Cumulative Wins Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(PLOTS_DIR, "training_cumulative_wins.png"))
+    plt.show()
+
+    # Plot 3: Cumulative Returns
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df[df["Player"] == player_id]
+        returns = df_player.groupby("Round")["Return"].sum().cumsum()
+        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, returns_full, label=f"{player[1]} Return", linestyle="--")
+
+    plt.xlabel("Round")
+    plt.ylabel("Cumulative Return")
+    plt.title("Training: Cumulative Return Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(PLOTS_DIR, "training_cumulative_returns.png"))
+    plt.show()
+
+    # Plot 4: Rolling Returns
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df[df["Player"] == player_id]
+        return_series = df_player.groupby("Round")["Return"].sum().reindex(rounds, fill_value=0)
+        rolling_returns = return_series.rolling(window=window_size, min_periods=1).mean()
+        plt.plot(rounds, rolling_returns, label=f"{player[1]} Rolling Return")
+
+    plt.xlabel("Round")
+    plt.ylabel(f"Avg Return (rolling window={window_size})")
+    plt.title(f"Training: Rolling Average Return Over {window_size} Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(PLOTS_DIR, f"training_rolling_returns_{window_size}.png"))
+    plt.show()

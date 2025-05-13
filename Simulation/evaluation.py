@@ -81,97 +81,86 @@ def run_evaluation(players, num_games=10000):
     print("Evaluation complete. Results saved to 'evaluation_results.csv'")
 
 
-# Players is the whole player setup: [(agent_class, "agent name", ...)]
-def plot_training_results(players):
-    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
-    df = pd.read_csv(csv_path)
-    rounds = pd.Series(range(1, df["Round"].max() + 1), name="Round")
+def plot_evaluation_results(players, window_size=50):
+    import os
+    import pandas as pd
+    import matplotlib.pyplot as plt
 
-    # Plot 1: Cumulative Wins (Training)
-    plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
-        df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
-        wins_cumulative = df_wins.groupby("Round").size().cumsum()
-        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, wins_full, label=f"{player[1]} Wins")
-
-    plt.xlabel("Round")
-    plt.ylabel("Cumulative Wins")
-    plt.title("Training: Cumulative Wins Over Rounds")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_wins.png")
-    plt.savefig(plots_path)
-    plt.show()
-
-    # Plot 2: Cumulative Returns (Training)
-    plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
-        df_player = df[df["Player"] == player_id]
-        returns = df_player.groupby("Round")["Return"].sum().cumsum()
-        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, returns_full, label=f"{player[1]} Return", linestyle="--")
-
-    plt.xlabel("Round")
-    plt.ylabel("Cumulative Return")
-    plt.title("Training: Cumulative Return Over Rounds")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_returns.png")
-    plt.savefig(plots_path)
-    plt.show()
-
-
-# Players is the whole player setup: [(agent_class, "agent name", ...)]
-def plot_evaluation_results(players):
     csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
     df_eval = pd.read_csv(csv_path)
+    max_game = df_eval["Game"].max()
+    games = pd.Series(range(1, max_game + 1), name="Game")
 
-    rounds = pd.Series(range(1, df_eval["Game"].max() + 1), name="Game")
+    # Plot 1: Rolling Win Rate
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df_eval[df_eval["Player"] == player_id].copy()
+        df_player["IsWin"] = (df_player["Outcome"] == "WIN").astype(int)
+        win_series = df_player.groupby("Game")["IsWin"].sum().reindex(games, fill_value=0)
+        rolling_win_rate = win_series.rolling(window=window_size, min_periods=1).mean()
+        plt.plot(games, rolling_win_rate, label=f"{player[1]} Win Rate")
 
-    """
-    Example:
-    players = [(Q_learning(), "q-learning"), (optimal_agent(), "optimal"), (random_agent(), "random")]
-    Q-agent: players[0][0]
-    """
+    plt.xlabel("Game")
+    plt.ylabel(f"Win Rate (rolling window={window_size})")
+    plt.title(f"Evaluation: Rolling Win Rate Over {window_size} Games")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(PLOTS_DIR, f"evaluation_win_rate_{window_size}.png"))
+    plt.show()
 
-    # Plot 1: Cumulative Wins over games (Evaluation)
+    # Plot 2: Cumulative Wins
     plt.figure(figsize=(12, 6))
     for player_id, player in enumerate(players):
         df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Game").size().cumsum()
-        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, wins_full, label=f"{player[1]} Wins")
+        wins_full = wins_cumulative.reindex(games).ffill().fillna(0).astype(int)
+        plt.plot(games, wins_full, label=f"{player[1]} Wins")
 
-    plt.xlabel("Rounds")
+    plt.xlabel("Game")
     plt.ylabel("Cumulative Wins")
-    plt.title("Evaluation: Cumulative Wins Over Rounds")
+    plt.title("Evaluation: Cumulative Wins Over Games")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_wins.png")
-    plt.savefig(plots_path)
+    plt.savefig(os.path.join(PLOTS_DIR, "evaluation_cumulative_wins.png"))
     plt.show()
 
-    # Plot 2: Cumulative Returns (Evaluation)
+    # Plot 3: Cumulative Returns
     plt.figure(figsize=(12, 6))
     for player_id, player in enumerate(players):
         df_player = df_eval[df_eval["Player"] == player_id]
         returns = df_player.groupby("Game")["Return"].sum().cumsum()
-        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, returns_full, label=f"{player[1]} Return", linestyle="--")
+        returns_full = returns.reindex(games).ffill().fillna(0).astype(int)
+        plt.plot(games, returns_full, label=f"{player[1]} Return", linestyle="--")
 
-    plt.xlabel("Rounds")
+    plt.xlabel("Game")
     plt.ylabel("Cumulative Return")
-    plt.title("Evaluation: Cumulative Return Over Rounds")
+    plt.title("Evaluation: Cumulative Return Over Games")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "evaluation_cumulative_returns.png")
-    plt.savefig(plots_path)
+    plt.savefig(os.path.join(PLOTS_DIR, "evaluation_cumulative_returns.png"))
     plt.show()
+
+    # Plot 4: Rolling Returns
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df_eval[df_eval["Player"] == player_id]
+        return_series = df_player.groupby("Game")["Return"].sum().reindex(games, fill_value=0)
+        rolling_returns = return_series.rolling(window=window_size, min_periods=1).mean()
+        plt.plot(games, rolling_returns, label=f"{player[1]} Rolling Return")
+
+    plt.xlabel("Game")
+    plt.ylabel(f"Avg Return (rolling window={window_size})")
+    plt.title(f"Evaluation: Rolling Average Return Over {window_size} Games")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(PLOTS_DIR, f"evaluation_rolling_returns_{window_size}.png"))
+    plt.show()
+
+
 
 
 # Players is the whole player setup: [(agent_class, "agent name", ...)]
