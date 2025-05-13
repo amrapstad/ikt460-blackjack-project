@@ -18,12 +18,6 @@ def run_evaluation(players, num_games=10000):
     player_count = len(players)
     environment = Environment(deck_count=4, players=player_count)
 
-    """
-    Example:
-    players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
-    Q-agent: players[0][0]
-    """
-
     results = []
 
     for game_num in range(1, num_games + 1):
@@ -36,18 +30,18 @@ def run_evaluation(players, num_games=10000):
                     if hand.is_standing:
                         continue
 
-                    if players[player_index][1] == "q-learning":
-                        action = players[player_index][0].choose_action(
+                    current_agent_label = players[player_index].agent_label
+
+                    if current_agent_label == "q-learning" or current_agent_label == "mbve-q-learning":
+                        action = players[player_index].choose_action(
                             player_index, hand, environment.game_manager.dealer.face_up_card
                         )
-                    elif players[player_index][1] == "optimal":
-                        action = players[player_index][0].choose_action(
+                    elif current_agent_label == "optimal" or current_agent_label == "random":
+                        action = players[player_index].choose_action(
                             hand, environment.game_manager.dealer.face_up_card
                         )
-                    elif players[player_index][1] == "random":
-                        action = players[player_index][0].choose_action(
-                            hand, environment.game_manager.dealer.face_up_card
-                        )
+                    else:
+                        raise Exception(f"Algorithm not yet implemented for {players[player_index].agent_label}")
 
                     round_history_output = environment.input(player_index, hand_index, action=action)
 
@@ -82,60 +76,11 @@ def run_evaluation(players, num_games=10000):
 
 
 # Players is the whole player setup: [(agent_class, "agent name", ...)]
-def plot_training_results(players):
-    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
-    df = pd.read_csv(csv_path)
-    rounds = pd.Series(range(1, df["Round"].max() + 1), name="Round")
-
-    # Plot 1: Cumulative Wins (Training)
-    plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
-        df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
-        wins_cumulative = df_wins.groupby("Round").size().cumsum()
-        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, wins_full, label=f"{player[1]} Wins")
-
-    plt.xlabel("Round")
-    plt.ylabel("Cumulative Wins")
-    plt.title("Training: Cumulative Wins Over Rounds")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_wins.png")
-    plt.savefig(plots_path)
-    plt.show()
-
-    # Plot 2: Cumulative Returns (Training)
-    plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
-        df_player = df[df["Player"] == player_id]
-        returns = df_player.groupby("Round")["Return"].sum().cumsum()
-        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, returns_full, label=f"{player[1]} Return", linestyle="--")
-
-    plt.xlabel("Round")
-    plt.ylabel("Cumulative Return")
-    plt.title("Training: Cumulative Return Over Rounds")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_returns.png")
-    plt.savefig(plots_path)
-    plt.show()
-
-
-# Players is the whole player setup: [(agent_class, "agent name", ...)]
 def plot_evaluation_results(players):
     csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
     df_eval = pd.read_csv(csv_path)
 
     rounds = pd.Series(range(1, df_eval["Game"].max() + 1), name="Game")
-
-    """
-    Example:
-    players = [(Q_learning(), "q-learning"), (optimal_agent(), "optimal"), (random_agent(), "random")]
-    Q-agent: players[0][0]
-    """
 
     # Plot 1: Cumulative Wins over games (Evaluation)
     plt.figure(figsize=(12, 6))
@@ -143,7 +88,7 @@ def plot_evaluation_results(players):
         df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Game").size().cumsum()
         wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, wins_full, label=f"{player[1]} Wins")
+        plt.plot(rounds, wins_full, label=f"{player.agent_label.upper()} Wins")
 
     plt.xlabel("Rounds")
     plt.ylabel("Cumulative Wins")
@@ -161,7 +106,7 @@ def plot_evaluation_results(players):
         df_player = df_eval[df_eval["Player"] == player_id]
         returns = df_player.groupby("Game")["Return"].sum().cumsum()
         returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
-        plt.plot(rounds, returns_full, label=f"{player[1]} Return", linestyle="--")
+        plt.plot(rounds, returns_full, label=f"{player.agent_label.upper()} Return", linestyle="--")
 
     plt.xlabel("Rounds")
     plt.ylabel("Cumulative Return")
@@ -174,7 +119,7 @@ def plot_evaluation_results(players):
     plt.show()
 
 
-# Players is the whole player setup: [(agent_class, "agent name", ...)]
+# Players is the whole player setup: [agent_class, ...]
 def plot_return_distributions(players):
     # Define bin edges and labels
     bin_edges = [-float("inf"), -40, -20, -10, -5, 0, 5, 10, 20, 40, float("inf")]
@@ -205,8 +150,7 @@ def plot_return_distributions(players):
 
         # Plot
         ax = grouped.plot(kind="bar", figsize=(12, 6), width=0.7)
-        name_string = player[1]
-        plt.title(f"{name_string.upper()} agent - Return Distribution (Training vs Evaluation)")
+        plt.title(f"{player.agent_label.upper()} agent - Return Distribution (Training vs Evaluation)")
         plt.xlabel("Return Range")
         plt.ylabel("Count")
         plt.xticks(rotation=45)
@@ -225,10 +169,34 @@ def plot_return_distributions(players):
                                 ha='center', va='bottom', fontsize=9)
 
         # Save and show
-        filename = f"return_distribution_{player[1].lower().replace(' ', '_')}.png"
+        filename = f"return_distribution_{player.agent_label.lower().replace(' ', '_')}.png"
         plots_path = os.path.join(PLOTS_DIR, filename)
         plt.savefig(plots_path)
         plt.show()
+
+
+# Players is the whole player setup: [agent_class, ...]
+def plot_action_distribution(players):
+    csv_path = os.path.join(CSV_DIR, "actions.csv")
+    df = pd.read_csv(csv_path)
+
+    action_labels = {0: "Stand", 1: "Hit", 2: "Double", 3: "Split", 4: "Insurance"}
+    df["ActionLabel"] = df["Action"].map(action_labels)
+
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df[df["Player"] == player_id]
+        action_counts = df_player["ActionLabel"].value_counts(normalize=True).sort_index()
+        plt.bar([f"{player.agent_label.upper()} - {a}" for a in action_counts.index], action_counts.values, label=player.agent_label)
+
+    plt.ylabel("Proportion of Actions")
+    plt.title("Action Distribution per Agents")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.grid(True)
+    plots_path = os.path.join(PLOTS_DIR, "action_distribution.png")
+    plt.savefig(plots_path)
+    plt.show()
 
 
 def plot_q_value_convergence(q_agent: QAgent):
@@ -241,33 +209,8 @@ def plot_q_value_convergence(q_agent: QAgent):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    path = os.path.join(PLOTS_DIR, 'q_value_convergence.png')
+    path = os.path.join(PLOTS_DIR, f"q_value_convergence_{q_agent.agent_label}.png")
     plt.savefig(path)
-    plt.show()
-
-
-# Players is the whole player setup: [(agent_class, "agent name", ...)]
-def plot_action_distribution(players):
-    csv_path = os.path.join(CSV_DIR, "actions.csv")
-    df = pd.read_csv(csv_path)
-
-    action_labels = {0: "Stand", 1: "Hit", 2: "Double", 3: "Split", 4: "Insurance"}
-    df["ActionLabel"] = df["Action"].map(action_labels)
-
-    plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
-        df_player = df[df["Player"] == player_id]
-        action_counts = df_player["ActionLabel"].value_counts(normalize=True).sort_index()
-        name_string = str(player[1])
-        plt.bar([f"{name_string.upper()} - {a}" for a in action_counts.index], action_counts.values, label=player[1])
-
-    plt.ylabel("Proportion of Actions")
-    plt.title("Action Distribution per Agents")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.grid(True)
-    plots_path = os.path.join(PLOTS_DIR, "action_distribution.png")
-    plt.savefig(plots_path)
     plt.show()
 
 
@@ -291,6 +234,6 @@ def plot_state_value_heatmap(q_agent: QAgent):
     plt.xlabel("Dealer Showing")
     plt.ylabel("Player Hand Value")
     plt.tight_layout()
-    path = os.path.join(PLOTS_DIR, 'state_value_heatmap.png')
+    path = os.path.join(PLOTS_DIR, f"state_value_heatmap_{q_agent.agent_label}.png")
     plt.savefig(path)
     plt.show()

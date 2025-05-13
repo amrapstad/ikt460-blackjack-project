@@ -1,17 +1,21 @@
 import os, csv
 
+import matplotlib.pyplot as plt
+import pandas as pd
+
 from Game.environment import Environment
 
 from Agents.q_agent import QAgent
+from Agents.mbve_q_agent import MbveQAgent
 from Agents.optimal_agent import OptimalAgent
 from Agents.random_agent import RandomAgent
 
-from definitions import CSV_DIR
+from definitions import CSV_DIR, PLOTS_DIR
 
 
 def save_q_tables_to_csv(q_learning_agent: QAgent):
     for player_index, q_table in q_learning_agent.q_tables.items():
-        filename = f"q_table_player_{player_index + 1}.csv"
+        filename = f"q_table_{q_learning_agent.agent_label}.csv"
         filepath = os.path.join(CSV_DIR, filename)
         with open(filepath, mode='w', newline='') as file:
             writer = csv.writer(file)
@@ -25,9 +29,10 @@ def save_q_tables_to_csv(q_learning_agent: QAgent):
                 writer.writerow([player_hand_str, dealer_card_str, action, round(q_value, 4)])
 
 
-# Trains one q-agent. Number of players and q-agent position is given. Max 5 players. One optimal agent. Rest is random.
-# Returns the whole player setup: [(agent_class, "agent name"), ...]
-def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1000000):
+# Trains one q-agent (with or without mbve)
+# Number of players and q-agent position is given. Max 5 players. One optimal agent. Rest is random.
+# Returns the whole player setup: [agent_class, ...]
+def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rounds_to_simulate=1000000):
     environment = Environment(deck_count=4, players=num_players)
 
     players = []
@@ -35,13 +40,13 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1
 
     for i in range(num_players):
         if q_agent_pos == i:
-            players.append((QAgent(), "q-learning"))
+            players.append(MbveQAgent() if with_mbve else QAgent())
             continue
         if not optimal_added:
             optimal_added = True
-            players.append((OptimalAgent(), "optimal"))
+            players.append(OptimalAgent())
             continue
-        players.append((RandomAgent(), "random"))
+        players.append(RandomAgent())
 
     round_outcomes = []
 
@@ -73,18 +78,18 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1
                     if hand.is_standing:
                         continue
 
-                    if players[player_index][1] == "q-learning":
-                        action = players[player_index][0].choose_action(
+                    current_agent_label = players[player_index].agent_label
+
+                    if current_agent_label == "q-learning" or current_agent_label == "mbve-q-learning":
+                        action = players[player_index].choose_action(
                             player_index, hand, environment.game_manager.dealer.face_up_card
                         )
-                    elif players[player_index][1] == "optimal":
-                        action = players[player_index][0].choose_action(
+                    elif current_agent_label == "optimal" or current_agent_label == "random":
+                        action = players[player_index].choose_action(
                             hand, environment.game_manager.dealer.face_up_card
                         )
-                    elif players[player_index][1] == "random":
-                        action = players[player_index][0].choose_action(
-                            hand, environment.game_manager.dealer.face_up_card
-                        )
+                    else:
+                        raise Exception(f"Algorithm not yet implemented for {players[player_index].agent_label}")
 
                     round_history_output = environment.input(player_index, hand_index, action=action)
                     action_log.append([round_num, player_index, hand_index, action])
@@ -96,7 +101,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1
                         q_agent_history = [entry for entry in round_history_output if entry[q_agent_pos] == 0]
                         if q_agent_history:
                             print(f"Updating Q-table for Q-agent")
-                            players[q_agent_pos][0].process_round_history_for_q_values(q_agent_history)
+                            players[q_agent_pos].process_round_history_for_q_values(q_agent_history)
 
                         # Track outcomes
                         for p_idx, h_idx, hand_history, outcome, _ in round_history_output:
@@ -129,7 +134,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1
         writer.writerows(round_outcomes)
 
     # Save the Q-table at the end of simulation
-    save_q_tables_to_csv(players[q_agent_pos][0])
+    save_q_tables_to_csv(players[q_agent_pos])
 
     # Save action log to CSV
     actions_csv = os.path.join(CSV_DIR, "actions.csv")
@@ -141,3 +146,46 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1
     print("Simulation complete. Results saved.")
 
     return players
+
+
+# Players is the whole player setup: [agent_class, ...]
+def plot_training_results(players):
+    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
+    df = pd.read_csv(csv_path)
+    rounds = pd.Series(range(1, df["Round"].max() + 1), name="Round")
+
+    # Plot 1: Cumulative Wins (Training)
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
+        wins_cumulative = df_wins.groupby("Round").size().cumsum()
+        wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, wins_full, label=f"{player.agent_label.upper()} Wins")
+
+    plt.xlabel("Round")
+    plt.ylabel("Cumulative Wins")
+    plt.title("Training: Cumulative Wins Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_wins.png")
+    plt.savefig(plots_path)
+    plt.show()
+
+    # Plot 2: Cumulative Returns (Training)
+    plt.figure(figsize=(12, 6))
+    for player_id, player in enumerate(players):
+        df_player = df[df["Player"] == player_id]
+        returns = df_player.groupby("Round")["Return"].sum().cumsum()
+        returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
+        plt.plot(rounds, returns_full, label=f"{player.agent_label.upper()} Return", linestyle="--")
+
+    plt.xlabel("Round")
+    plt.ylabel("Cumulative Return")
+    plt.title("Training: Cumulative Return Over Rounds")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plots_path = os.path.join(PLOTS_DIR, "training_cumulative_returns.png")
+    plt.savefig(plots_path)
+    plt.show()

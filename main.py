@@ -46,18 +46,20 @@ def print_environment_state_player_view(environment):
 if __name__ == "__main__":
     """
     Example:
-        players = [(Q_learning(), "Q-agent"), (optimal_agent(), "optimal"), (random_agent(), "random")]
-        Q-agent: players[0][0]
-        "Q-agent": players[0][1]
+        players = [q_learning_agent, OptimalAgent(), RandomAgent()]
+        Q-agent: players[0]
     """
 
-    # Training
+    # Q-agent training
     q_learning_result = run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1000)
     plot_training_results(q_learning_result)
-    q_learning_agent = q_learning_result[0][0] # q_learning_result[q_agent_pos][0]
+    q_learning_agent = q_learning_result[0] # q_learning_result[q_agent_pos]
+
+    # MBVE Q-agent training
+    # TODO: Train a q-agent with mbve
 
     # Evaluation
-    eval_players = [(q_learning_agent, "q-learning"), (OptimalAgent(), "optimal"), (RandomAgent(), "random")]
+    eval_players = [q_learning_agent, OptimalAgent(), RandomAgent()]
     run_evaluation(eval_players, num_games=100)
     plot_evaluation_results(eval_players)
 
