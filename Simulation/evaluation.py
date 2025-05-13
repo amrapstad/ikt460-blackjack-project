@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import defaultdict
 
-from Agents.q_learning import Q_Learning
+from Agents.q_agent import QAgent
 from Game.environment import Environment
 
 from definitions import CSV_DIR, PLOTS_DIR
@@ -231,7 +231,7 @@ def plot_return_distributions(players):
         plt.show()
 
 
-def plot_q_value_convergence(q_agent: Q_Learning):
+def plot_q_value_convergence(q_agent: QAgent):
     convergence_data = q_agent.q_value_changes
     plt.figure(figsize=(12, 6))
     plt.plot(convergence_data, label='Avg Q-Value Change')
@@ -271,7 +271,7 @@ def plot_action_distribution(players):
     plt.show()
 
 
-def plot_state_value_heatmap(q_agent: Q_Learning):
+def plot_state_value_heatmap(q_agent: QAgent):
     # Assuming state = ((player_value,), dealer_card), we reduce to 2D
     q_values = defaultdict(list)
 

@@ -2,14 +2,14 @@ import os, csv
 
 from Game.environment import Environment
 
-from Agents.q_learning import Q_Learning
+from Agents.q_agent import QAgent
 from Agents.optimal_agent import OptimalAgent
 from Agents.random_agent import RandomAgent
 
 from definitions import CSV_DIR
 
 
-def save_q_tables_to_csv(q_learning_agent: Q_Learning):
+def save_q_tables_to_csv(q_learning_agent: QAgent):
     for player_index, q_table in q_learning_agent.q_tables.items():
         filename = f"q_table_player_{player_index + 1}.csv"
         filepath = os.path.join(CSV_DIR, filename)
@@ -35,7 +35,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1
 
     for i in range(num_players):
         if q_agent_pos == i:
-            players.append((Q_Learning(), "q-learning"))
+            players.append((QAgent(), "q-learning"))
             continue
         if not optimal_added:
             optimal_added = True

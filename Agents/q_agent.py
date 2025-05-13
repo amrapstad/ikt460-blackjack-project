@@ -1,6 +1,6 @@
 import random
 
-class Q_Learning:
+class QAgent:
     def __init__(self):
         self.q_tables = {}
         self.q_value_changes = []  # Track Q-value deltas over time

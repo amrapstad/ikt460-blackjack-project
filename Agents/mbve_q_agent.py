@@ -1,10 +1,10 @@
-from Agent.q_learning import Q_Learning
+from Agents.q_agent import QAgent
 import random
 from Game.hand import Hand
 from Game.card import Card
 
 
-class MBVE_Q_Learning(Q_Learning):
+class MbveQAgent(QAgent):
     def __init__(self, rollout_depth=3):
         super().__init__()
         self.rollout_depth = rollout_depth
