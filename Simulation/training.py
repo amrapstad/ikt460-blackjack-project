@@ -10,7 +10,7 @@ from Agents.mbve_q_agent import MbveQAgent
 from Agents.optimal_agent import OptimalAgent
 from Agents.random_agent import RandomAgent
 
-from definitions import CSV_DIR, PLOTS_DIR
+from definitions import CSV_DIR, TRAINING_DIR
 
 
 def save_q_tables_to_csv(q_learning_agent: QAgent):
@@ -169,7 +169,7 @@ def plot_training_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(PLOTS_DIR, "training_cumulative_wins.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, "training_cumulative_wins.png"))
     plt.show()
 
     # Plot 2: Rolling Win Rate
@@ -187,7 +187,7 @@ def plot_training_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(PLOTS_DIR, f"training_win_rate_{window_size}.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_win_rate_{window_size}.png"))
     plt.show()
 
     # Plot 3: Cumulative Returns
@@ -204,7 +204,7 @@ def plot_training_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(PLOTS_DIR, "training_cumulative_returns.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, "training_cumulative_returns.png"))
     plt.show()
 
     # Plot 4: Rolling Returns
@@ -221,5 +221,5 @@ def plot_training_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(PLOTS_DIR, f"training_rolling_returns_{window_size}.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_rolling_returns_{window_size}.png"))
     plt.show()

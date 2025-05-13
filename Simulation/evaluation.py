@@ -8,7 +8,7 @@ from collections import defaultdict
 from Agents.q_agent import QAgent
 from Game.environment import Environment
 
-from definitions import CSV_DIR, PLOTS_DIR
+from definitions import CSV_DIR, PLOTS_DIR, EVALUATION_DIR, DISTRIBUTIONS_DIR, Q_VALUE_DIR
 
 
 # Players is the whole player setup: [(agent_class, "agent name", ...)]
@@ -96,7 +96,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(PLOTS_DIR, "evaluation_cumulative_wins.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, "evaluation_cumulative_wins.png"))
     plt.show()
 
     # Plot 2: Rolling Win Rate
@@ -114,7 +114,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(PLOTS_DIR, f"evaluation_win_rate_{window_size}.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_win_rate_{window_size}.png"))
     plt.show()
 
     # Plot 3: Cumulative Returns
@@ -131,7 +131,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(PLOTS_DIR, "evaluation_cumulative_returns.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, "evaluation_cumulative_returns.png"))
     plt.show()
 
     # Plot 4: Rolling Returns
@@ -148,7 +148,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(PLOTS_DIR, f"evaluation_rolling_returns_{window_size}.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_rolling_returns_{window_size}.png"))
     plt.show()
 
 
@@ -183,7 +183,7 @@ def plot_return_distributions(players):
 
         # Plot
         ax = grouped.plot(kind="bar", figsize=(12, 6), width=0.7)
-        plt.title(f"{player.agent_label.upper()} agent - Return Distribution (Training vs Evaluation)")
+        plt.title(f"{player.agent_label.upper()} agent - Distributions (Training vs Evaluation)")
         plt.xlabel("Return Range")
         plt.ylabel("Count")
         plt.xticks(rotation=45)
@@ -203,7 +203,7 @@ def plot_return_distributions(players):
 
         # Save and show
         filename = f"return_distribution_{player.agent_label.lower().replace(' ', '_')}.png"
-        plots_path = os.path.join(PLOTS_DIR, filename)
+        plots_path = os.path.join(DISTRIBUTIONS_DIR, filename)
         plt.savefig(plots_path)
         plt.show()
 
@@ -227,7 +227,7 @@ def plot_action_distribution(players):
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.grid(True)
-    plots_path = os.path.join(PLOTS_DIR, "action_distribution.png")
+    plots_path = os.path.join(DISTRIBUTIONS_DIR, "action_distribution.png")
     plt.savefig(plots_path)
     plt.show()
 
@@ -242,7 +242,7 @@ def plot_q_value_convergence(q_agent: QAgent):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    path = os.path.join(PLOTS_DIR, f"q_value_convergence_{q_agent.agent_label}.png")
+    path = os.path.join(Q_VALUE_DIR, f"q_value_convergence_{q_agent.agent_label}.png")
     plt.savefig(path)
     plt.show()
 
@@ -267,6 +267,6 @@ def plot_state_value_heatmap(q_agent: QAgent):
     plt.xlabel("Dealer Showing")
     plt.ylabel("Player Hand Value")
     plt.tight_layout()
-    path = os.path.join(PLOTS_DIR, f"state_value_heatmap_{q_agent.agent_label}.png")
+    path = os.path.join(Q_VALUE_DIR, f"state_value_heatmap_{q_agent.agent_label}.png")
     plt.savefig(path)
     plt.show()
