@@ -313,10 +313,10 @@ def plot_state_value_max_and_avg_heatmaps(q_agent: QAgent):
     plt.savefig(path)
     plt.show()
 
-def plot_state_value_heatmaps(q_agent: QAgent):
+def plot_state_value_heatmaps(q_agent: QAgent, current_pos):
     q_values = defaultdict(list)
 
-    for (state, action), q in q_agent.q_tables[0].items():
+    for (state, action), q in q_agent.q_tables[current_pos].items():
         player_hand = state[0][0] if state[0] else 0
         dealer_card = state[1]
         q_values[(player_hand, dealer_card)].append(q)
