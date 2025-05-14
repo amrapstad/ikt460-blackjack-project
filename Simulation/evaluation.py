@@ -232,39 +232,34 @@ def plot_action_distribution(players):
     plt.show()
 
 
-def plot_q_value_convergence(q_agent: QAgent):
-    convergence_data = q_agent.q_value_changes
+def plot_q_value_convergence(q_agent: QAgent, window_size=50):
+    deltas = q_agent.q_value_changes_per_round
+    rounds = list(range(1, len(deltas) + 1))
+
+    if not deltas:
+        print("No Q-value change data available.")
+        return
+
+    delta_series = pd.Series(deltas)
+    rolling_avg = delta_series.rolling(window=window_size, min_periods=1).mean()
+
     plt.figure(figsize=(12, 6))
-    plt.plot(convergence_data, label='Avg Q-Value Change')
-    plt.xlabel('Q-Update Iteration')
-    plt.ylabel('Average ΔQ')
-    plt.title('Q-Value Convergence Over Time')
+    plt.plot(rounds, deltas, label='Raw Avg ΔQ per Round', alpha=0.5)
+    plt.plot(rounds, rolling_avg, label=f'Rolling Avg ΔQ (window={window_size})', linewidth=2)
+    plt.xlabel("Round")
+    plt.ylabel("Average Q-Value Change")
+    plt.title("Q-Value Convergence with Rolling Average")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
+    
+    # Fixed path
     path = os.path.join(Q_VALUE_DIR, f"q_value_convergence_{q_agent.agent_label}.png")
     plt.savefig(path)
     plt.show()
 
-def plot_q_value_convergence_pr_action(q_agent: QAgent, action_id: int = 0):
-    action_name = {0: "Stand", 1: "Hit", 2: "Double", 3: "Split", 4: "Insurance"}.get(action_id, f"Action {action_id}")
-    convergence_data = q_agent.q_value_changes_by_action.get(action_id, [])
 
-    if not convergence_data:
-        print(f"No convergence data available for action {action_name}.")
-        return
 
-    plt.figure(figsize=(12, 6))
-    plt.plot(convergence_data, label=f'Avg ΔQ for {action_name}')
-    plt.xlabel('Q-Update Iteration')
-    plt.ylabel('ΔQ Value')
-    plt.title(f'Q-Value Convergence for {action_name}')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    path = os.path.join(Q_VALUE_DIR, f"q_value_convergence_action_{action_id}_{q_agent.agent_label}.png")
-    plt.savefig(path)
-    plt.show()
 
 def plot_state_value_heatmap(q_agent: QAgent):
     # Assuming state = ((player_value,), dealer_card), we reduce to 2D

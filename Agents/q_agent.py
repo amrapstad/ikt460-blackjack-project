@@ -5,9 +5,9 @@ class QAgent:
         self.agent_label = "q-learning"
         self.q_tables = {}
         # Track Q-value deltas over time
-        self.q_value_changes = []  
-        # Actions 0 to 4
-        self.q_value_changes_by_action = {a: [] for a in range(5)}  
+        self.q_value_changes_per_round = []  
+
+  
 
 
     def process_round_history_for_q_values(self, round_history_output, learning_rate=0.1, discount_factor=0.9):
@@ -59,14 +59,12 @@ class QAgent:
                 q_table[(state, action_key)] = new_q
 
                 delta = abs(new_q - old_q)
-                self.q_value_changes_by_action[action_key].append(delta)
-
                 delta_sum += delta
                 delta_count += 1
 
         if delta_count > 0:
             avg_delta = delta_sum / delta_count
-            self.q_value_changes.append(avg_delta)
+            self.q_value_changes_per_round.append(avg_delta)
 
     def get_possible_values_from_cards(self, cards):
         total_values = [0]

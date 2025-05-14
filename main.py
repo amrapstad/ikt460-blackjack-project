@@ -51,7 +51,7 @@ if __name__ == "__main__":
     """
 
     # Q-agent training
-    q_learning_result = run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=1000)
+    q_learning_result = run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=10000)
     plot_training_results(q_learning_result)
     q_learning_agent = q_learning_result[0] # q_learning_result[q_agent_pos]
 
@@ -60,13 +60,13 @@ if __name__ == "__main__":
 
     # Evaluation
     eval_players = [q_learning_agent, OptimalAgent(), RandomAgent()]
-    run_evaluation(eval_players, num_games=100)
+    run_evaluation(eval_players, num_games=1000)
     plot_evaluation_results(eval_players)
 
     # Win/Loss Distribution of Stakes
     plot_return_distributions(eval_players)
     
-    plot_q_value_convergence(q_learning_agent)
+    plot_q_value_convergence(q_learning_agent, window_size=100)
     plot_action_distribution(eval_players)
     plot_state_value_heatmap(q_learning_agent)
 
