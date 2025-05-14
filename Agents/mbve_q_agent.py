@@ -12,6 +12,8 @@ class MbveQAgent(QAgent):
         self.rollout_depth = rollout_depth
 
     def process_round_history_for_q_values(self, round_history_output, learning_rate=0.05, discount_factor=0.9):
+        delta_sum = 0.0
+        delta_count = 0
         for player_index, hand_index, hand_history, outcome, dealer_face_up_card in round_history_output:
             if player_index not in self.q_tables:
                 self.q_tables[player_index] = {}
@@ -22,7 +24,7 @@ class MbveQAgent(QAgent):
                 action_key = action
 
                 # MBVE target using short simulated rollouts
-                mbve_target = self.simulate_rollout(cards, action, dealer_face_up_card, q_table, discount_factor)
+                mbve_target = self.simulate_rollout(cards, stake, action, dealer_face_up_card, q_table, discount_factor)
 
                 # Q-learning update
                 if (state, action_key) not in q_table:
@@ -31,7 +33,15 @@ class MbveQAgent(QAgent):
                 new_q = old_q + learning_rate * (mbve_target - old_q)
                 q_table[(state, action_key)] = new_q
 
-    def simulate_rollout(self, cards, action, dealer_card, q_table, discount_factor):
+                delta = abs(new_q - old_q)
+                delta_sum += delta
+                delta_count += 1
+
+        if delta_count > 0:
+            avg_delta = delta_sum / delta_count
+            self.q_value_changes_per_round.append(avg_delta)
+
+    def simulate_rollout(self, cards, stake, action, dealer_card, q_table, discount_factor):
         hand = Hand(cards.copy())
         deck = [Card(suit, value) for suit in range(1, 5) for value in range(1, 14)]
         random.shuffle(deck)
@@ -42,7 +52,7 @@ class MbveQAgent(QAgent):
         self.simulated_action(hand, action, deck)
 
         if hand.busted_hand:
-            return -hand.stake
+            return -stake
 
         for step in range(1, self.rollout_depth):
             state = (tuple(sorted(self.get_possible_values_from_cards(hand.hand_cards))), dealer_card.value)
@@ -54,15 +64,23 @@ class MbveQAgent(QAgent):
             self.simulated_action(hand, best_action, deck)
 
             if hand.busted_hand:
-                return reward_sum + gamma * -hand.stake
+                return reward_sum + gamma * -stake
 
             gamma *= discount_factor
 
-        # Final value bootstrapping
-        final_state = (tuple(sorted(self.get_possible_values_from_cards(hand.hand_cards))), dealer_card.value)
-        final_qs = [q_table.get((final_state, a), 0.0) for a in range(5)]
-        reward_sum += gamma * max(final_qs)
+        # Terminal reward shaping based on final hand strength
+        final_hand_values = self.get_possible_values_from_cards(hand.hand_cards)
+        best_final_value = max((v for v in final_hand_values if v <= 21), default=min(final_hand_values))
+
+        if best_final_value >= 20:
+            reward_sum += gamma * 0.8 * stake  # strong winning hand
+        elif best_final_value <= 15:
+            reward_sum += gamma * -0.5 * stake  # weak hand likely to lose
+        else:
+            reward_sum += 0.0  # neutral mid-value
+
         return reward_sum
+
 
     def simulated_action(self, hand, action, deck):
         try:
