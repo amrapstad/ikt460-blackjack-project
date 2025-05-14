@@ -38,11 +38,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
     environment = Environment(deck_count=4, players=num_players)
 
     players = []
-
-    # Important players: The Q-agent, the optimal agent and the first random agent
-    # Contains the three indices for three important players
     important_indices = []
-
     optimal_added = False
     first_random_added = False
 
@@ -59,27 +55,13 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
         if not first_random_added:
             first_random_added = True
             important_indices.append(i)
-
         players.append(RandomAgent())
 
     round_outcomes = []
-
-    return_tracking = { }
-    for i in range(num_players):
-        return_tracking[i] = []
-
-    cumulative_return = { }
-    for i in range(num_players):
-        cumulative_return[i] = 0
-
-    win_tracking = { }
-    for i in range(num_players):
-        win_tracking[i] = []
-
-    cumulative_wins = { }
-    for i in range(num_players):
-        cumulative_wins[i] = 0
-
+    return_tracking = {i: [] for i in range(num_players)}
+    cumulative_return = {i: 0 for i in range(num_players)}
+    win_tracking = {i: [] for i in range(num_players)}
+    cumulative_wins = {i: 0 for i in range(num_players)}
     action_log = []
 
     for round_num in range(1, rounds_to_simulate + 1):
@@ -89,78 +71,77 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
 
         while not round_finished:
             for player_index, player in enumerate(environment.game_manager.players):
-                for hand_index, hand in enumerate(player.hands):
-                    if hand.is_standing:
-                        continue
+                all_hands_done = False
+                while not all_hands_done:
+                    all_hands_done = True
+                    for hand_index, hand in enumerate(player.hands):
+                        if hand.is_standing:
+                            continue
+                        all_hands_done = False
 
-                    current_agent_label = players[player_index].agent_label
+                        current_agent_label = players[player_index].agent_label
 
-                    if current_agent_label in ("q-learning", "mbve-q-learning"):
-                        action = players[player_index].choose_action(
-                            player_index, hand, environment.game_manager.dealer.face_up_card
-                        )
-                    elif current_agent_label in ("optimal", "random"):
-                        action = players[player_index].choose_action(
-                            hand, environment.game_manager.dealer.face_up_card
-                        )
-                    else:
-                        raise Exception(f"Algorithm not yet implemented for {current_agent_label}")
+                        if current_agent_label in ("q-learning", "mbve-q-learning"):
+                            action = players[player_index].choose_action(
+                                player_index, hand, environment.game_manager.dealer.face_up_card
+                            )
+                        elif current_agent_label in ("optimal", "random"):
+                            action = players[player_index].choose_action(
+                                hand, environment.game_manager.dealer.face_up_card
+                            )
+                        else:
+                            raise Exception(f"Algorithm not yet implemented for {current_agent_label}")
 
-                    # Only store action log for important players
-                    if player_index in important_indices:
-                        round_action_log.append([round_num, player_index, hand_index, action])
+                        if player_index in important_indices:
+                            round_action_log.append([round_num, player_index, hand_index, action])
 
-                    round_history_output = environment.input(player_index, hand_index, action=action)
+                        round_history_output = environment.input(player_index, hand_index, action=action)
 
-                    if round_history_output:
-                        print(">>> Round completed")
+                        if round_history_output:
+                            print(">>> Round completed")
 
-                        # Update Q-table if needed
-                        q_agent_history = [entry for entry in round_history_output if entry[q_agent_pos] == 0]
-                        if q_agent_history:
-                            print(f"Updating Q-table for Q-agent")
-                            players[q_agent_pos].process_round_history_for_q_values(q_agent_history)
+                            q_agent_history = [entry for entry in round_history_output if entry[q_agent_pos] == 0]
+                            if q_agent_history:
+                                print(f"Updating Q-table for Q-agent")
+                                players[q_agent_pos].process_round_history_for_q_values(q_agent_history)
 
-                        # Outcomes
-                        for p_idx, h_idx, hand_history, outcome, _ in round_history_output:
-                            if not hand_history:
-                                continue
-                            stake = hand_history[-1][1]
-                            if outcome == "WIN":
-                                result = stake
-                                cumulative_wins[p_idx] += 1
-                            elif outcome == "LOSE":
-                                result = -stake
-                            else:
-                                result = 0
+                            for p_idx, h_idx, hand_history, outcome, _ in round_history_output:
+                                if not hand_history:
+                                    continue
+                                stake = hand_history[-1][1]
+                                if outcome == "WIN":
+                                    result = stake
+                                    cumulative_wins[p_idx] += 1
+                                elif outcome == "LOSE":
+                                    result = -stake
+                                else:
+                                    result = 0
 
-                            cumulative_return[p_idx] += result
-                            win_tracking[p_idx].append((round_num, cumulative_wins[p_idx]))
-                            return_tracking[p_idx].append((round_num, cumulative_return[p_idx]))
+                                cumulative_return[p_idx] += result
+                                win_tracking[p_idx].append((round_num, cumulative_wins[p_idx]))
+                                return_tracking[p_idx].append((round_num, cumulative_return[p_idx]))
 
-                            # Only store outcomes for important players
-                            if p_idx in important_indices:
-                                round_outcomes.append([round_num, p_idx, h_idx, outcome, result])
+                                if p_idx in important_indices:
+                                    round_outcomes.append([round_num, p_idx, h_idx, outcome, result])
 
-                        round_finished = True
+                            round_finished = True
+                            break
+                    if round_finished:
                         break
-                if round_finished:
-                    break
 
-        # Only now, after round is actually finished, append the collected actions
         action_log.extend(round_action_log)
 
-    # Save round outcomes (important players only)
+    # Save round outcomes
     csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
     with open(csv_path, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Round", "Player", "Hand", "Outcome", "Return"])
         writer.writerows(round_outcomes)
 
-    # Save the Q-table at the end of simulation
+    # Save Q-table
     save_q_tables_to_csv(players[q_agent_pos])
 
-    # Save action log to CSV (important players only)
+    # Save action log
     actions_csv = os.path.join(CSV_DIR, "actions.csv")
     with open(actions_csv, mode="w", newline="") as file:
         writer = csv.writer(file)
@@ -170,6 +151,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
     print("Simulation complete. Results saved.")
 
     return players
+
 
 
 # Players is the whole player setup: [agent_class, ...]

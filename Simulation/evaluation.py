@@ -24,44 +24,41 @@ def run_evaluation(players, num_games=10000):
 
         while not round_finished:
             for player_index, player in enumerate(environment.game_manager.players):
-                for hand_index, hand in enumerate(player.hands):
-                    if hand.is_standing:
-                        continue
+                all_hands_done = False
+                while not all_hands_done:
+                    all_hands_done = True
+                    for hand_index, hand in enumerate(player.hands):
+                        if hand.is_standing:
+                            continue
+                        all_hands_done = False
 
-                    current_agent_label = players[player_index].agent_label
+                        current_agent_label = players[player_index].agent_label
 
-                    if current_agent_label == "q-learning" or current_agent_label == "mbve-q-learning":
-                        action = players[player_index].choose_action(
-                            player_index, hand, environment.game_manager.dealer.face_up_card
-                        )
-                    elif current_agent_label == "optimal" or current_agent_label == "random":
-                        action = players[player_index].choose_action(
-                            hand, environment.game_manager.dealer.face_up_card
-                        )
-                    else:
-                        raise Exception(f"Algorithm not yet implemented for {players[player_index].agent_label}")
+                        if current_agent_label in ("q-learning", "mbve-q-learning"):
+                            action = players[player_index].choose_action(
+                                player_index, hand, environment.game_manager.dealer.face_up_card
+                            )
+                        elif current_agent_label in ("optimal", "random"):
+                            action = players[player_index].choose_action(
+                                hand, environment.game_manager.dealer.face_up_card
+                            )
+                        else:
+                            raise Exception(f"Algorithm not yet implemented for {players[player_index].agent_label}")
 
-                    round_history_output = environment.input(player_index, hand_index, action=action)
+                        round_history_output = environment.input(player_index, hand_index, action=action)
 
-                    if round_history_output:
-                        print(">>> Evaluation Round completed")
-                        # Record the result but do NOT update Q-values
-                        for p_idx, h_idx, hand_history, outcome, _ in round_history_output:
-                            if not hand_history:
-                                continue
-                            stake = hand_history[-1][1]
-                            if outcome == "WIN":
-                                result = stake
-                            elif outcome == "LOSE":
-                                result = -stake
-                            else:
-                                result = 0
-                            results.append([game_num, p_idx, h_idx, outcome, result])
-
-                        round_finished = True
+                        if round_history_output:
+                            print(">>> Evaluation Round completed")
+                            for p_idx, h_idx, hand_history, outcome, _ in round_history_output:
+                                if not hand_history:
+                                    continue
+                                stake = hand_history[-1][1]
+                                result = stake if outcome == "WIN" else -stake if outcome == "LOSE" else 0
+                                results.append([game_num, p_idx, h_idx, outcome, result])
+                            round_finished = True
+                            break
+                    if round_finished:
                         break
-                if round_finished:
-                    break
 
     # Save evaluation results
     csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
@@ -71,6 +68,7 @@ def run_evaluation(players, num_games=10000):
         writer.writerows(results)
 
     print("Evaluation complete. Results saved to 'evaluation_results.csv'")
+
 
 
 # Players is the whole player setup: [agent_class, ...]
