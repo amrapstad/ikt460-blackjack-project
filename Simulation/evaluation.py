@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from Agents.q_agent import QAgent
 from Game.environment import Environment
 
-from definitions import CSV_DIR, PLOTS_DIR, EVALUATION_DIR, DISTRIBUTIONS_DIR, Q_VALUE_DIR
+from definitions import CSV_DIR, EVALUATION_DIR
 
 
 # Players is the whole player setup: [(agent_class, "agent name", ...)]
@@ -150,43 +150,56 @@ def plot_evaluation_results(players, window_size=50):
 
 # Players is the whole player setup: [agent_class, ...]
 def plot_return_distributions(players):
-    # Define bin edges and labels
+    # First cut random and optimal agents from players
+    players = [player for player in players if isinstance(player, QAgent)]
+
+    # Bin setup
     bin_edges = [-float("inf"), -40, -20, -10, -5, 0, 5, 10, 20, 40, float("inf")]
     bin_labels = ["< -40", "-40", "-20", "-10", "-5", "0", "5", "10", "20", "40+"]
 
-    def prepare_distribution(df, label):
-        df["Bin"] = pd.cut(df["Return"], bins=bin_edges, labels=bin_labels, right=False)
-        df["Source"] = label
-        return df
+    def prepare_distribution(df, player_index, _agent_name, label):
+        df_agent = df[df["Player"] == player_index].copy()
+        df_agent["AgentName"] = _agent_name
+        df_agent["Bin"] = pd.cut(df_agent["Return"], bins=bin_edges, labels=bin_labels, right=False)
+        df_agent["Source"] = label
+        return df_agent
 
-    # Load and label the data
-    csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
-    df_train = pd.read_csv(csv_path)
-    df_train = prepare_distribution(df_train, "Training")
+    # Load evaluation data once
+    eval_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+    df_eval_full = pd.read_csv(eval_path)
 
-    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
-    df_eval = pd.read_csv(csv_path)
-    df_eval = prepare_distribution(df_eval, "Evaluation")
+    for eval_index, player in enumerate(players):
+        agent_name = player.agent_name
+        training_index = player.training_index
+        safe_name = agent_name.lower().replace(" ", "_")
 
-    # Combine both
-    df_all = pd.concat([df_train, df_eval], ignore_index=True)
+        # Load that agent's training data
+        train_csv = os.path.join(CSV_DIR, f"round_outcomes_{safe_name}.csv")
+        if not os.path.exists(train_csv):
+            print(f"Training CSV not found for agent '{agent_name}' at: {train_csv}")
+            continue
+        df_train_full = pd.read_csv(train_csv)
 
-    for player_id, player in enumerate(players):
-        df_player = df_all[df_all["Player"] == player_id]
+        # Prepare training and evaluation slices
+        df_train = prepare_distribution(df_train_full, training_index, agent_name, "Training")
+        df_eval = prepare_distribution(df_eval_full, eval_index, agent_name, "Evaluation")
 
-        # Group by Bin and Source (training/eval)
-        grouped = df_player.groupby(["Bin", "Source"], observed=False).size().unstack(fill_value=0).reindex(bin_labels)
+        # Combine both
+        df_combined = pd.concat([df_train, df_eval], ignore_index=True)
 
-        # Plot
+        # Group and plot
+        grouped = df_combined.groupby(["Bin", "Source"], observed=False).size().unstack(fill_value=0).reindex(
+            bin_labels)
+
         ax = grouped.plot(kind="bar", figsize=(12, 6), width=0.7)
-        plt.title(f"{player.agent_name.upper()} agent - Distributions (Training vs Evaluation)")
+        plt.title(f"{agent_name.upper()} Agent - Return Distribution (Training vs Evaluation)")
         plt.xlabel("Return Range")
         plt.ylabel("Count")
         plt.xticks(rotation=45)
         plt.grid(True)
         plt.tight_layout()
 
-        # Add value labels above each bar
+        # Annotate bars
         for container in ax.containers:
             for bar in container:
                 height = bar.get_height()
@@ -198,31 +211,7 @@ def plot_return_distributions(players):
                                 ha='center', va='bottom', fontsize=9)
 
         # Save and show
-        filename = f"return_distribution_{player.agent_name.lower().replace(' ', '_')}.png"
-        plots_path = os.path.join(DISTRIBUTIONS_DIR, filename)
+        filename = f"return_distribution_{safe_name}.png"
+        plots_path = os.path.join(EVALUATION_DIR, filename)
         plt.savefig(plots_path)
         plt.show()
-
-
-# Players is the whole player setup: [agent_class, ...]
-def plot_action_distribution(players):
-    csv_path = os.path.join(CSV_DIR, "actions.csv")
-    df = pd.read_csv(csv_path)
-
-    action_labels = {0: "Stand", 1: "Hit", 2: "Double", 3: "Split", 4: "Insurance"}
-    df["ActionLabel"] = df["Action"].map(action_labels)
-
-    plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
-        df_player = df[df["Player"] == player_id]
-        action_counts = df_player["ActionLabel"].value_counts(normalize=True).sort_index()
-        plt.bar([f"{player.agent_name.upper()} - {a}" for a in action_counts.index], action_counts.values, label=player.agent_name)
-
-    plt.ylabel("Proportion of Actions")
-    plt.title("Action Distribution per Agent")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.grid(True)
-    plots_path = os.path.join(DISTRIBUTIONS_DIR, "action_distribution.png")
-    plt.savefig(plots_path)
-    plt.show()
