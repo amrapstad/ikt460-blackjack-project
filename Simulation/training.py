@@ -34,7 +34,7 @@ def save_q_tables_to_csv(q_agent: QAgent):
 # Trains one q-agent (with or without mbve)
 # Number of players and q-agent position is given. Max 5 players. One optimal agent. Rest is random.
 # Returns the whole player setup: [agent_class, ...]
-def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=True, rounds_to_simulate=1000000):
+def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rounds_to_simulate=1000000):
     environment = Environment(deck_count=4, players=num_players)
 
     players = []
@@ -309,7 +309,7 @@ def plot_state_value_max_and_avg_heatmaps(q_agent: QAgent):
 
     plt.tight_layout()
     # Fixed path
-    path = os.path.join(Q_VALUE_DIR, f"state_value_heatmap_{q_agent.agent_name}.png")
+    path = os.path.join(TRAINING_DIR, f"state_value_heatmap_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
 
@@ -340,7 +340,7 @@ def plot_state_value_heatmaps(q_agent: QAgent):
     plt.ylabel("Player Hand Value")
     plt.tight_layout()
     # Fixed path
-    path = os.path.join(Q_VALUE_DIR, f"state_value_heatmap_max_{q_agent.agent_name}.png")
+    path = os.path.join(TRAINING_DIR, f"state_value_heatmap_max_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
 

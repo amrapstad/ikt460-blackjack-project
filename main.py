@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # Training results
     plot_training_results(q_learning_result)
     plot_action_distribution(q_learning_result)
-    plot_state_value_heatmap(q_learning_agent)
+    plot_state_value_heatmaps(q_learning_agent)
     plot_q_value_convergence(q_learning_agent, window_size=100)
 
     # Evaluation
