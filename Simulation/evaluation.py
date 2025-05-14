@@ -2,8 +2,6 @@ import os, csv
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-from collections import defaultdict
 
 from Agents.q_agent import QAgent
 from Game.environment import Environment
@@ -86,7 +84,7 @@ def plot_evaluation_results(players, window_size=50):
         df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Game").size().cumsum()
         wins_full = wins_cumulative.reindex(games).ffill().fillna(0).astype(int)
-        plt.plot(games, wins_full, label=f"{player.agent_label.upper()} Wins")
+        plt.plot(games, wins_full, label=f"{player.agent_name.upper()} Wins")
 
     plt.xlabel("Game")
     plt.ylabel("Cumulative Wins")
@@ -104,7 +102,7 @@ def plot_evaluation_results(players, window_size=50):
         df_player["IsWin"] = (df_player["Outcome"] == "WIN").astype(int)
         win_series = df_player.groupby("Game")["IsWin"].sum().reindex(games, fill_value=0)
         rolling_win_rate = win_series.rolling(window=window_size, min_periods=1).mean()
-        plt.plot(games, rolling_win_rate, label=f"{player.agent_label.upper()} Win Rate")
+        plt.plot(games, rolling_win_rate, label=f"{player.agent_name.upper()} Win Rate")
 
     plt.xlabel("Game")
     plt.ylabel(f"Win Rate (rolling window={window_size})")
@@ -112,7 +110,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_win_rate_{window_size}.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_win_rate.png"))
     plt.show()
 
     # Plot 3: Cumulative Returns
@@ -121,7 +119,7 @@ def plot_evaluation_results(players, window_size=50):
         df_player = df_eval[df_eval["Player"] == player_id]
         returns = df_player.groupby("Game")["Return"].sum().cumsum()
         returns_full = returns.reindex(games).ffill().fillna(0).astype(int)
-        plt.plot(games, returns_full, label=f"{player.agent_label.upper()} Return", linestyle="--")
+        plt.plot(games, returns_full, label=f"{player.agent_name.upper()} Return", linestyle="--")
 
     plt.xlabel("Game")
     plt.ylabel("Cumulative Return")
@@ -138,7 +136,7 @@ def plot_evaluation_results(players, window_size=50):
         df_player = df_eval[df_eval["Player"] == player_id]
         return_series = df_player.groupby("Game")["Return"].sum().reindex(games, fill_value=0)
         rolling_returns = return_series.rolling(window=window_size, min_periods=1).mean()
-        plt.plot(games, rolling_returns, label=f"{player.agent_label.upper()} Rolling Return")
+        plt.plot(games, rolling_returns, label=f"{player.agent_name.upper()} Rolling Return")
 
     plt.xlabel("Game")
     plt.ylabel(f"Avg Return (rolling window={window_size})")
@@ -146,7 +144,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_rolling_returns_{window_size}.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_rolling_returns.png"))
     plt.show()
 
 
@@ -181,7 +179,7 @@ def plot_return_distributions(players):
 
         # Plot
         ax = grouped.plot(kind="bar", figsize=(12, 6), width=0.7)
-        plt.title(f"{player.agent_label.upper()} agent - Distributions (Training vs Evaluation)")
+        plt.title(f"{player.agent_name.upper()} agent - Distributions (Training vs Evaluation)")
         plt.xlabel("Return Range")
         plt.ylabel("Count")
         plt.xticks(rotation=45)
@@ -200,7 +198,7 @@ def plot_return_distributions(players):
                                 ha='center', va='bottom', fontsize=9)
 
         # Save and show
-        filename = f"return_distribution_{player.agent_label.lower().replace(' ', '_')}.png"
+        filename = f"return_distribution_{player.agent_name.lower().replace(' ', '_')}.png"
         plots_path = os.path.join(DISTRIBUTIONS_DIR, filename)
         plt.savefig(plots_path)
         plt.show()
@@ -218,67 +216,13 @@ def plot_action_distribution(players):
     for player_id, player in enumerate(players):
         df_player = df[df["Player"] == player_id]
         action_counts = df_player["ActionLabel"].value_counts(normalize=True).sort_index()
-        plt.bar([f"{player.agent_label.upper()} - {a}" for a in action_counts.index], action_counts.values, label=player.agent_label)
+        plt.bar([f"{player.agent_name.upper()} - {a}" for a in action_counts.index], action_counts.values, label=player.agent_name)
 
     plt.ylabel("Proportion of Actions")
-    plt.title("Action Distribution per Agents")
+    plt.title("Action Distribution per Agent")
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.grid(True)
     plots_path = os.path.join(DISTRIBUTIONS_DIR, "action_distribution.png")
     plt.savefig(plots_path)
-    plt.show()
-
-
-def plot_q_value_convergence(q_agent: QAgent, window_size=50):
-    deltas = q_agent.q_value_changes_per_round
-    rounds = list(range(1, len(deltas) + 1))
-
-    if not deltas:
-        print("No Q-value change data available.")
-        return
-
-    delta_series = pd.Series(deltas)
-    rolling_avg = delta_series.rolling(window=window_size, min_periods=1).mean()
-
-    plt.figure(figsize=(12, 6))
-    plt.plot(rounds, deltas, label='Raw Avg ΔQ per Round', alpha=0.5)
-    plt.plot(rounds, rolling_avg, label=f'Rolling Avg ΔQ (window={window_size})', linewidth=2)
-    plt.xlabel("Round")
-    plt.ylabel("Average Q-Value Change")
-    plt.title("Q-Value Convergence with Rolling Average")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    
-    # Fixed path
-    path = os.path.join(Q_VALUE_DIR, f"q_value_convergence_{q_agent.agent_label}.png")
-    plt.savefig(path)
-    plt.show()
-
-
-
-
-def plot_state_value_heatmap(q_agent: QAgent):
-    # Assuming state = ((player_value,), dealer_card), we reduce to 2D
-    q_values = defaultdict(list)
-
-    for (state, action), q in q_agent.q_tables[0].items():
-        player_hand = state[0][0] if state[0] else 0
-        dealer_card = state[1]
-        q_values[(player_hand, dealer_card)].append(q)
-
-    avg_q_values = {(k[0], k[1]): sum(v) / len(v) for k, v in q_values.items()}
-
-    data = pd.DataFrame([{'Player': k[0], 'Dealer': k[1], 'Q': v} for k, v in avg_q_values.items()])
-    heatmap_data = data.pivot(index='Player', columns='Dealer', values='Q')
-
-    plt.figure(figsize=(12, 8))
-    sns.heatmap(heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
-    plt.title("State-Value Heatmap (Avg Q-Value)")
-    plt.xlabel("Dealer Showing")
-    plt.ylabel("Player Hand Value")
-    plt.tight_layout()
-    path = os.path.join(Q_VALUE_DIR, f"state_value_heatmap_{q_agent.agent_label}.png")
-    plt.savefig(path)
     plt.show()

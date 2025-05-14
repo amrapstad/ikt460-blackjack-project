@@ -27,8 +27,9 @@ def get_total_action_from_csv(csv_table, hand_total, face_up_card):
 
 
 class OptimalAgent:
-    def __init__(self):
+    def __init__(self, agent_id="0"):
         self.agent_label = "optimal"
+        self.agent_name = f"{self.agent_label}_{agent_id}"
         self.hard_total_table = pd.read_csv(os.path.join(TABLES_DIR, "hard_total.csv"))
         self.soft_total_table = pd.read_csv(os.path.join(TABLES_DIR, "soft_total.csv"))
         self.split_table = pd.read_csv(os.path.join(TABLES_DIR, "split.csv"))

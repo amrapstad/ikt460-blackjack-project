@@ -1,7 +1,9 @@
 import os, csv
+from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 
 from Game.environment import Environment
 
@@ -10,7 +12,7 @@ from Agents.mbve_q_agent import MbveQAgent
 from Agents.optimal_agent import OptimalAgent
 from Agents.random_agent import RandomAgent
 
-from definitions import CSV_DIR, TRAINING_DIR
+from definitions import CSV_DIR, TRAINING_DIR, Q_VALUE_DIR
 
 
 def save_q_tables_to_csv(q_learning_agent: QAgent):
@@ -159,6 +161,8 @@ def plot_training_results(players, window_size=50):
     max_round = df["Round"].max()
     rounds = pd.Series(range(1, max_round + 1), name="Round")
 
+    q_agent = next((x for x in players if isinstance(x, QAgent)), None)
+
     # Retrieve important indices
     first_random_retrieved = False
     important_indices = []
@@ -181,11 +185,11 @@ def plot_training_results(players, window_size=50):
 
     plt.xlabel("Round")
     plt.ylabel("Cumulative Wins")
-    plt.title("Training: Cumulative Wins Over Rounds")
+    plt.title(f"Training - {q_agent.agent_name.upper()}: Cumulative Wins Over Rounds")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, "training_cumulative_wins.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_cumulative_wins_{q_agent.agent_name}.png"))
     plt.show()
 
     # Plot 2: Rolling Win Rate
@@ -200,11 +204,11 @@ def plot_training_results(players, window_size=50):
 
     plt.xlabel("Round")
     plt.ylabel(f"Win Rate (rolling window={window_size})")
-    plt.title(f"Training: Rolling Win Rate Over {window_size} Rounds")
+    plt.title(f"Training - {q_agent.agent_name.upper()}: Rolling Win Rate Over {window_size} Rounds")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, f"training_win_rate_{window_size}.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_win_rate_{q_agent.agent_name}.png"))
     plt.show()
 
     # Plot 3: Cumulative Returns
@@ -218,11 +222,11 @@ def plot_training_results(players, window_size=50):
 
     plt.xlabel("Round")
     plt.ylabel("Cumulative Return")
-    plt.title("Training: Cumulative Return Over Rounds")
+    plt.title(f"Training - {q_agent.agent_name.upper()}: Cumulative Return Over Rounds")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, "training_cumulative_returns.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_cumulative_returns_{q_agent.agent_name}.png"))
     plt.show()
 
     # Plot 4: Rolling Returns
@@ -236,9 +240,61 @@ def plot_training_results(players, window_size=50):
 
     plt.xlabel("Round")
     plt.ylabel(f"Avg Return (rolling window={window_size})")
-    plt.title(f"Training: Rolling Average Return Over {window_size} Rounds")
+    plt.title(f"Training - {q_agent.agent_name.upper()}: Rolling Average Return Over {window_size} Rounds")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, f"training_rolling_returns_{window_size}.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_rolling_returns_{q_agent.agent_name}.png"))
+    plt.show()
+
+
+def plot_q_value_convergence(q_agent: QAgent, window_size=50):
+    deltas = q_agent.q_value_changes_per_round
+    rounds = list(range(1, len(deltas) + 1))
+
+    if not deltas:
+        print("No Q-value change data available.")
+        return
+
+    delta_series = pd.Series(deltas)
+    rolling_avg = delta_series.rolling(window=window_size, min_periods=1).mean()
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(rounds, deltas, label='Raw Avg ΔQ per Round', alpha=0.5)
+    plt.plot(rounds, rolling_avg, label=f'Rolling Avg ΔQ (window={window_size})', linewidth=2)
+    plt.xlabel("Round")
+    plt.ylabel("Average Q-Value Change")
+    plt.title(f"Q-Value Convergence with Rolling Average - {q_agent.agent_name.upper()}")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+    # Fixed path
+    path = os.path.join(Q_VALUE_DIR, f"q_value_convergence_{q_agent.agent_name}.png")
+    plt.savefig(path)
+    plt.show()
+
+
+def plot_state_value_heatmap(q_agent: QAgent):
+    # Assuming state = ((player_value,), dealer_card), we reduce to 2D
+    q_values = defaultdict(list)
+
+    for (state, action), q in q_agent.q_tables[0].items():
+        player_hand = state[0][0] if state[0] else 0
+        dealer_card = state[1]
+        q_values[(player_hand, dealer_card)].append(q)
+
+    avg_q_values = {(k[0], k[1]): sum(v) / len(v) for k, v in q_values.items()}
+
+    data = pd.DataFrame([{'Player': k[0], 'Dealer': k[1], 'Q': v} for k, v in avg_q_values.items()])
+    heatmap_data = data.pivot(index='Player', columns='Dealer', values='Q')
+
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
+    plt.title(f"State-Value Heatmap (Avg Q-Value) - {q_agent.agent_name.upper()}")
+    plt.xlabel("Dealer Showing")
+    plt.ylabel("Player Hand Value")
+    plt.tight_layout()
+    path = os.path.join(Q_VALUE_DIR, f"state_value_heatmap_{q_agent.agent_name}.png")
+    plt.savefig(path)
     plt.show()
