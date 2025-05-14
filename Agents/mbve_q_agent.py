@@ -5,9 +5,10 @@ from Game.card import Card
 
 
 class MbveQAgent(QAgent):
-    def __init__(self, rollout_depth=3):
+    def __init__(self, agent_id="0", rollout_depth=3):
         super().__init__()
         self.agent_label = "mbve-q-learning"
+        self.agent_name = f"{self.agent_label}_{agent_id}"
         self.rollout_depth = rollout_depth
 
     def process_round_history_for_q_values(self, round_history_output, learning_rate=0.05, discount_factor=0.9):

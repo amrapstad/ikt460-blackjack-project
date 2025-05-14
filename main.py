@@ -74,7 +74,4 @@ if __name__ == "__main__":
     print("The end")
 
     # TODO:
-    # Fikse bug med at like agenter overwriter hverandre i evaluation plots
-    ## Løsning: I init, gi et tall som blir appenda til agent_label
-    # Fikse bug med action log i training (og evaluation)
-    ## Løsning spørre chat om å skrive om
+    # Legge til agent navn i tittel for plots for Q-learning i training, convergence og heatmap

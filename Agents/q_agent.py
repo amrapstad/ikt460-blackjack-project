@@ -1,8 +1,9 @@
 import random
 
 class QAgent:
-    def __init__(self):
+    def __init__(self, agent_id="0"):
         self.agent_label = "q-learning"
+        self.agent_name = f"{self.agent_label}_{agent_id}"
         self.q_tables = {}
         # Track Q-value deltas over time
         self.q_value_changes_per_round = []  
