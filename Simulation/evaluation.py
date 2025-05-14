@@ -186,24 +186,24 @@ def plot_return_distributions(players, eval_id=0, train_id=0):
         # Combine both
         df_combined = pd.concat([df_train, df_eval], ignore_index=True)
 
-        # Group and plot
-        grouped = df_combined.groupby(["Bin", "Source"], observed=False).size().unstack(fill_value=0).reindex(
-            bin_labels)
+        # Group and normalize to percentages
+        grouped = df_combined.groupby(["Bin", "Source"], observed=False).size().unstack(fill_value=0).reindex(bin_labels)
+        grouped_percent = grouped.divide(grouped.sum(axis=0), axis=1) * 100  # Convert to percentages
 
-        ax = grouped.plot(kind="bar", figsize=(12, 6), width=0.7)
-        plt.title(f"{agent_name.upper()} Agent - Return Distribution (Training vs Evaluation)")
+        ax = grouped_percent.plot(kind="bar", figsize=(12, 6), width=0.7)
+        plt.title(f"{agent_name.upper()} Agent - Return Distribution (% - Training vs Evaluation)")
         plt.xlabel("Return Range")
-        plt.ylabel("Count")
+        plt.ylabel("Percentage (%)")
         plt.xticks(rotation=45)
         plt.grid(True)
         plt.tight_layout()
 
-        # Annotate bars
+        # Annotate bars with percentages
         for container in ax.containers:
             for bar in container:
                 height = bar.get_height()
                 if height > 0:
-                    ax.annotate(f"{int(height)}",
+                    ax.annotate(f"{height:.1f}%",
                                 xy=(bar.get_x() + bar.get_width() / 2, height),
                                 xytext=(0, 3),
                                 textcoords="offset points",
