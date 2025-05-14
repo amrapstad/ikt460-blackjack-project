@@ -53,13 +53,13 @@ if __name__ == "__main__":
     # Q-agent training
     current_pos = 0
     q_learning_result = run_simulation_q_learning(num_players=4, q_agent_pos=current_pos, rounds_to_simulate=1000)
-    plot_training_results(q_learning_result)
     q_learning_agent = q_learning_result[current_pos] # q_learning_result[q_agent_pos]
 
     # MBVE Q-agent training
     # TODO: Train a q-agent with mbve
 
     # Training results
+    plot_training_results(q_learning_result)
     plot_state_value_heatmap(q_learning_agent)
     plot_q_value_convergence(q_learning_agent, window_size=100)
 

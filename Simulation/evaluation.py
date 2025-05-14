@@ -2,8 +2,6 @@ import os, csv
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-from collections import defaultdict
 
 from Agents.q_agent import QAgent
 from Game.environment import Environment
@@ -229,58 +227,4 @@ def plot_action_distribution(players):
     plt.grid(True)
     plots_path = os.path.join(DISTRIBUTIONS_DIR, "action_distribution.png")
     plt.savefig(plots_path)
-    plt.show()
-
-
-def plot_q_value_convergence(q_agent: QAgent, window_size=50):
-    deltas = q_agent.q_value_changes_per_round
-    rounds = list(range(1, len(deltas) + 1))
-
-    if not deltas:
-        print("No Q-value change data available.")
-        return
-
-    delta_series = pd.Series(deltas)
-    rolling_avg = delta_series.rolling(window=window_size, min_periods=1).mean()
-
-    plt.figure(figsize=(12, 6))
-    plt.plot(rounds, deltas, label='Raw Avg ΔQ per Round', alpha=0.5)
-    plt.plot(rounds, rolling_avg, label=f'Rolling Avg ΔQ (window={window_size})', linewidth=2)
-    plt.xlabel("Round")
-    plt.ylabel("Average Q-Value Change")
-    plt.title(f"Q-Value Convergence with Rolling Average - {q_agent.agent_name.upper()}")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    
-    # Fixed path
-    path = os.path.join(Q_VALUE_DIR, f"q_value_convergence_{q_agent.agent_name}.png")
-    plt.savefig(path)
-    plt.show()
-
-
-
-
-def plot_state_value_heatmap(q_agent: QAgent):
-    # Assuming state = ((player_value,), dealer_card), we reduce to 2D
-    q_values = defaultdict(list)
-
-    for (state, action), q in q_agent.q_tables[0].items():
-        player_hand = state[0][0] if state[0] else 0
-        dealer_card = state[1]
-        q_values[(player_hand, dealer_card)].append(q)
-
-    avg_q_values = {(k[0], k[1]): sum(v) / len(v) for k, v in q_values.items()}
-
-    data = pd.DataFrame([{'Player': k[0], 'Dealer': k[1], 'Q': v} for k, v in avg_q_values.items()])
-    heatmap_data = data.pivot(index='Player', columns='Dealer', values='Q')
-
-    plt.figure(figsize=(12, 8))
-    sns.heatmap(heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
-    plt.title(f"State-Value Heatmap (Avg Q-Value) - {q_agent.agent_name.upper()}")
-    plt.xlabel("Dealer Showing")
-    plt.ylabel("Player Hand Value")
-    plt.tight_layout()
-    path = os.path.join(Q_VALUE_DIR, f"state_value_heatmap_{q_agent.agent_name}.png")
-    plt.savefig(path)
     plt.show()
