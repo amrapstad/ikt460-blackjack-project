@@ -34,7 +34,7 @@ def save_q_tables_to_csv(q_agent: QAgent):
 # Trains one q-agent (with or without mbve)
 # Number of players and q-agent position is given. Max 5 players. One optimal agent. Rest is random.
 # Returns the whole player setup: [agent_class, ...]
-def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rounds_to_simulate=1000000):
+def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, train_id=0, rounds_to_simulate=1000000):
     environment = Environment(deck_count=4, players=num_players)
 
     players = []
@@ -133,7 +133,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
         action_log.extend(round_action_log)
 
     # Save round outcomes
-    csv_path = os.path.join(CSV_DIR, f"round_outcomes_{players[q_agent_pos].agent_name}.csv")
+    csv_path = os.path.join(CSV_DIR, f"round_outcomes_id{train_id}_{players[q_agent_pos].agent_name}.csv")
     with open(csv_path, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Round", "Player", "Hand", "Outcome", "Return"])
@@ -143,7 +143,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
     save_q_tables_to_csv(players[q_agent_pos])
 
     # Save action log
-    actions_csv = os.path.join(CSV_DIR, f"actions_{players[q_agent_pos].agent_name}.csv")
+    actions_csv = os.path.join(CSV_DIR, f"actions_id{train_id}_{players[q_agent_pos].agent_name}.csv")
     with open(actions_csv, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Round", "Player", "Hand", "Action"])
@@ -156,10 +156,10 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
 
 
 # Players is the whole player setup: [agent_class, ...]
-def plot_training_results(players, window_size=100):
+def plot_training_results(players, train_id=0, window_size=100):
     q_agent = next((x for x in players if isinstance(x, QAgent)), None)
     
-    csv_path = os.path.join(CSV_DIR, f"round_outcomes_{q_agent.agent_name}.csv")
+    csv_path = os.path.join(CSV_DIR, f"round_outcomes_id{train_id}_{q_agent.agent_name}.csv")
     df = pd.read_csv(csv_path)
     max_round = df["Round"].max()
     rounds = pd.Series(range(1, max_round + 1), name="Round")
@@ -190,7 +190,7 @@ def plot_training_results(players, window_size=100):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, f"training_cumulative_wins_{q_agent.agent_name}.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_cumulative_wins_id{train_id}_{q_agent.agent_name}.png"))
     plt.show()
 
     # Plot 2: Rolling Win Rate
@@ -209,7 +209,7 @@ def plot_training_results(players, window_size=100):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, f"training_win_rate_{q_agent.agent_name}.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_win_rate_id{train_id}_{q_agent.agent_name}.png"))
     plt.show()
 
     # Plot 3: Cumulative Returns
@@ -227,7 +227,7 @@ def plot_training_results(players, window_size=100):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, f"training_cumulative_returns_{q_agent.agent_name}.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_cumulative_returns_id{train_id}_{q_agent.agent_name}.png"))
     plt.show()
 
     # Plot 4: Rolling Returns
@@ -245,11 +245,11 @@ def plot_training_results(players, window_size=100):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, f"training_rolling_returns_{q_agent.agent_name}.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_rolling_returns_id{train_id}_{q_agent.agent_name}.png"))
     plt.show()
 
 
-def plot_q_value_convergence(q_agent: QAgent, window_size=50):
+def plot_q_value_convergence(q_agent: QAgent, train_id=0, window_size=50):
     deltas = q_agent.q_value_changes_per_round
     rounds = list(range(1, len(deltas) + 1))
 
@@ -271,11 +271,11 @@ def plot_q_value_convergence(q_agent: QAgent, window_size=50):
     plt.tight_layout()
 
     # Fixed path
-    path = os.path.join(TRAINING_DIR, f"q_value_convergence_{q_agent.agent_name}.png")
+    path = os.path.join(TRAINING_DIR, f"q_value_convergence_id{train_id}_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
 
-def plot_state_value_max_and_avg_heatmaps(q_agent: QAgent):
+def plot_state_value_max_and_avg_heatmaps(q_agent: QAgent, train_id=0):
     q_values = defaultdict(list)
 
     for (state, action), q in q_agent.q_tables[0].items():
@@ -309,11 +309,11 @@ def plot_state_value_max_and_avg_heatmaps(q_agent: QAgent):
 
     plt.tight_layout()
     # Fixed path
-    path = os.path.join(TRAINING_DIR, f"state_value_heatmap_{q_agent.agent_name}.png")
+    path = os.path.join(TRAINING_DIR, f"state_value_heatmap_id{train_id}_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
 
-def plot_state_value_heatmaps(q_agent: QAgent):
+def plot_state_value_heatmaps(q_agent: QAgent, train_id=0):
     q_values = defaultdict(list)
 
     for (state, action), q in q_agent.q_tables[0].items():
@@ -340,7 +340,7 @@ def plot_state_value_heatmaps(q_agent: QAgent):
     plt.ylabel("Player Hand Value")
     plt.tight_layout()
     # Fixed path
-    path = os.path.join(TRAINING_DIR, f"state_value_heatmap_max_{q_agent.agent_name}.png")
+    path = os.path.join(TRAINING_DIR, f"state_value_heatmap_max_id{train_id}_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
 
@@ -352,16 +352,16 @@ def plot_state_value_heatmaps(q_agent: QAgent):
     plt.ylabel("Player Hand Value")
     plt.tight_layout()
 
-    path = os.path.join(TRAINING_DIR, f"state_value_heatmap_{q_agent.agent_name}.png")
+    path = os.path.join(TRAINING_DIR, f"state_value_heatmap_id{train_id}_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
 
 
 # Players is the whole player setup: [agent_class, ...]
-def plot_action_distribution(players):
+def plot_action_distribution(players, train_id=0):
     q_agent = next((x for x in players if isinstance(x, QAgent)), None)
 
-    csv_path = os.path.join(CSV_DIR, f"actions_{q_agent.agent_name}.csv")
+    csv_path = os.path.join(CSV_DIR, f"actions_id{train_id}_{q_agent.agent_name}.csv")
     df = pd.read_csv(csv_path)
 
     action_labels = {0: "Stand", 1: "Hit", 2: "Double", 3: "Split", 4: "Insurance"}
@@ -378,6 +378,6 @@ def plot_action_distribution(players):
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.grid(True)
-    plots_path = os.path.join(TRAINING_DIR, f"action_distribution_{q_agent.agent_name}.png")
+    plots_path = os.path.join(TRAINING_DIR, f"action_distribution_id{train_id}_{q_agent.agent_name}.png")
     plt.savefig(plots_path)
     plt.show()

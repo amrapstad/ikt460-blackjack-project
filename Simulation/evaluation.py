@@ -10,7 +10,7 @@ from definitions import CSV_DIR, EVALUATION_DIR
 
 
 # Players is the whole player setup: [(agent_class, "agent name", ...)]
-def run_evaluation(players, num_games=10000):
+def run_evaluation(players, eval_id=0, num_games=10000):
     print(f"\n🔍 Running evaluation over {num_games} games...")
 
     player_count = len(players)
@@ -61,7 +61,7 @@ def run_evaluation(players, num_games=10000):
                         break
 
     # Save evaluation results
-    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+    csv_path = os.path.join(CSV_DIR, f"evaluation_results_id{eval_id}.csv")
     with open(csv_path, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Game", "Player", "Hand", "Outcome", "Return"])
@@ -70,10 +70,9 @@ def run_evaluation(players, num_games=10000):
     print("Evaluation complete. Results saved to 'evaluation_results.csv'")
 
 
-
 # Players is the whole player setup: [agent_class, ...]
-def plot_evaluation_results(players, window_size=50):
-    csv_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+def plot_evaluation_results(players, eval_id=0, window_size=50):
+    csv_path = os.path.join(CSV_DIR, f"evaluation_results_id{eval_id}.csv")
     df_eval = pd.read_csv(csv_path)
     max_game = df_eval["Game"].max()
     games = pd.Series(range(1, max_game + 1), name="Game")
@@ -92,7 +91,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(EVALUATION_DIR, "evaluation_cumulative_wins.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_cumulative_wins_id{eval_id}.png"))
     plt.show()
 
     # Plot 2: Rolling Win Rate
@@ -110,7 +109,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_win_rate.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_win_rate_id{eval_id}.png"))
     plt.show()
 
     # Plot 3: Cumulative Returns
@@ -127,7 +126,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(EVALUATION_DIR, "evaluation_cumulative_returns.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_cumulative_returns_id{eval_id}.png"))
     plt.show()
 
     # Plot 4: Rolling Returns
@@ -144,12 +143,12 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_rolling_returns.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_rolling_returns_id{eval_id}.png"))
     plt.show()
 
 
 # Players is the whole player setup: [agent_class, ...]
-def plot_return_distributions(players):
+def plot_return_distributions(players, eval_id=0):
     # First cut random and optimal agents from players
     players = [player for player in players if isinstance(player, QAgent)]
 
@@ -165,7 +164,7 @@ def plot_return_distributions(players):
         return df_agent
 
     # Load evaluation data once
-    eval_path = os.path.join(CSV_DIR, "evaluation_results.csv")
+    eval_path = os.path.join(CSV_DIR, f"evaluation_results_id{eval_id}.csv")
     df_eval_full = pd.read_csv(eval_path)
 
     for eval_index, player in enumerate(players):
@@ -211,7 +210,7 @@ def plot_return_distributions(players):
                                 ha='center', va='bottom', fontsize=9)
 
         # Save and show
-        filename = f"return_distribution_{safe_name}.png"
+        filename = f"return_distribution_id{eval_id}_{safe_name}.png"
         plots_path = os.path.join(EVALUATION_DIR, filename)
         plt.savefig(plots_path)
         plt.show()
