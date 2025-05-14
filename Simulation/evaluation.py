@@ -148,7 +148,7 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
 
 
 # Players is the whole player setup: [agent_class, ...]
-def plot_return_distributions(players, eval_id=0):
+def plot_return_distributions(players, eval_id=0, train_id=0):
     # First cut random and optimal agents from players
     players = [player for player in players if isinstance(player, QAgent)]
 
@@ -173,7 +173,7 @@ def plot_return_distributions(players, eval_id=0):
         safe_name = agent_name.lower().replace(" ", "_")
 
         # Load that agent's training data
-        train_csv = os.path.join(CSV_DIR, f"round_outcomes_{safe_name}.csv")
+        train_csv = os.path.join(CSV_DIR, f"round_outcomes_id{train_id}_{safe_name}.csv")
         if not os.path.exists(train_csv):
             print(f"Training CSV not found for agent '{agent_name}' at: {train_csv}")
             continue

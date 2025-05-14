@@ -15,9 +15,9 @@ from Agents.random_agent import RandomAgent
 from definitions import CSV_DIR, TRAINING_DIR
 
 
-def save_q_tables_to_csv(q_agent: QAgent):
+def save_q_tables_to_csv(q_agent: QAgent, train_id):
     for player_index, q_table in q_agent.q_tables.items():
-        filename = f"q_table_{q_agent.agent_name}.csv"
+        filename = f"q_table_id{train_id}_{q_agent.agent_name}.csv"
         filepath = os.path.join(CSV_DIR, filename)
         with open(filepath, mode='w', newline='') as file:
             writer = csv.writer(file)
@@ -140,7 +140,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, tra
         writer.writerows(round_outcomes)
 
     # Save Q-table
-    save_q_tables_to_csv(players[q_agent_pos])
+    save_q_tables_to_csv(players[q_agent_pos], train_id)
 
     # Save action log
     actions_csv = os.path.join(CSV_DIR, f"actions_id{train_id}_{players[q_agent_pos].agent_name}.csv")
