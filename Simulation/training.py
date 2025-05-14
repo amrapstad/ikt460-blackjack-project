@@ -177,6 +177,8 @@ def plot_training_results(players, window_size=50):
     max_round = df["Round"].max()
     rounds = pd.Series(range(1, max_round + 1), name="Round")
 
+    q_agent = next((x for x in players if isinstance(x, QAgent)), None)
+
     # Retrieve important indices
     first_random_retrieved = False
     important_indices = []
@@ -199,11 +201,11 @@ def plot_training_results(players, window_size=50):
 
     plt.xlabel("Round")
     plt.ylabel("Cumulative Wins")
-    plt.title("Training: Cumulative Wins Over Rounds")
+    plt.title(f"Training - {q_agent.agent_name.upper()}: Cumulative Wins Over Rounds")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, "training_cumulative_wins.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_cumulative_wins_{q_agent.agent_name}.png"))
     plt.show()
 
     # Plot 2: Rolling Win Rate
@@ -218,11 +220,11 @@ def plot_training_results(players, window_size=50):
 
     plt.xlabel("Round")
     plt.ylabel(f"Win Rate (rolling window={window_size})")
-    plt.title(f"Training: Rolling Win Rate Over {window_size} Rounds")
+    plt.title(f"Training - {q_agent.agent_name.upper()}: Rolling Win Rate Over {window_size} Rounds")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, f"training_win_rate_{window_size}.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_win_rate_{q_agent.agent_name}.png"))
     plt.show()
 
     # Plot 3: Cumulative Returns
@@ -236,11 +238,11 @@ def plot_training_results(players, window_size=50):
 
     plt.xlabel("Round")
     plt.ylabel("Cumulative Return")
-    plt.title("Training: Cumulative Return Over Rounds")
+    plt.title(f"Training - {q_agent.agent_name.upper()}: Cumulative Return Over Rounds")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, "training_cumulative_returns.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_cumulative_returns_{q_agent.agent_name}.png"))
     plt.show()
 
     # Plot 4: Rolling Returns
@@ -254,9 +256,9 @@ def plot_training_results(players, window_size=50):
 
     plt.xlabel("Round")
     plt.ylabel(f"Avg Return (rolling window={window_size})")
-    plt.title(f"Training: Rolling Average Return Over {window_size} Rounds")
+    plt.title(f"Training - {q_agent.agent_name.upper()}: Rolling Average Return Over {window_size} Rounds")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(TRAINING_DIR, f"training_rolling_returns_{window_size}.png"))
+    plt.savefig(os.path.join(TRAINING_DIR, f"training_rolling_returns_{q_agent.agent_name}.png"))
     plt.show()

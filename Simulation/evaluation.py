@@ -114,7 +114,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_win_rate_{window_size}.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_win_rate.png"))
     plt.show()
 
     # Plot 3: Cumulative Returns
@@ -148,7 +148,7 @@ def plot_evaluation_results(players, window_size=50):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_rolling_returns_{window_size}.png"))
+    plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_rolling_returns.png"))
     plt.show()
 
 
@@ -223,7 +223,7 @@ def plot_action_distribution(players):
         plt.bar([f"{player.agent_name.upper()} - {a}" for a in action_counts.index], action_counts.values, label=player.agent_name)
 
     plt.ylabel("Proportion of Actions")
-    plt.title("Action Distribution per Agents")
+    plt.title("Action Distribution per Agent")
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.grid(True)
@@ -248,7 +248,7 @@ def plot_q_value_convergence(q_agent: QAgent, window_size=50):
     plt.plot(rounds, rolling_avg, label=f'Rolling Avg ΔQ (window={window_size})', linewidth=2)
     plt.xlabel("Round")
     plt.ylabel("Average Q-Value Change")
-    plt.title("Q-Value Convergence with Rolling Average")
+    plt.title(f"Q-Value Convergence with Rolling Average - {q_agent.agent_name.upper()}")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
@@ -277,7 +277,7 @@ def plot_state_value_heatmap(q_agent: QAgent):
 
     plt.figure(figsize=(12, 8))
     sns.heatmap(heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
-    plt.title("State-Value Heatmap (Avg Q-Value)")
+    plt.title(f"State-Value Heatmap (Avg Q-Value) - {q_agent.agent_name.upper()}")
     plt.xlabel("Dealer Showing")
     plt.ylabel("Player Hand Value")
     plt.tight_layout()

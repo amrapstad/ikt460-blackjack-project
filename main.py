@@ -59,6 +59,10 @@ if __name__ == "__main__":
     # MBVE Q-agent training
     # TODO: Train a q-agent with mbve
 
+    # Training results
+    plot_state_value_heatmap(q_learning_agent)
+    plot_q_value_convergence(q_learning_agent, window_size=100)
+
     # Evaluation
     eval_players = [q_learning_agent, OptimalAgent(), RandomAgent()]
     run_evaluation(eval_players, num_games=1000)
@@ -66,12 +70,6 @@ if __name__ == "__main__":
 
     # Win/Loss Distribution of Stakes
     plot_return_distributions(eval_players)
-    
-    plot_q_value_convergence(q_learning_agent, window_size=100)
     plot_action_distribution(eval_players)
-    plot_state_value_heatmap(q_learning_agent)
 
     print("The end")
-
-    # TODO:
-    # Legge til agent navn i tittel for plots for Q-learning i training, convergence og heatmap
