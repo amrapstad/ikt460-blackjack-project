@@ -5,29 +5,23 @@ class QAgent:
         self.agent_label = "q-learning"
         self.agent_name = f"{self.agent_label}_{agent_id}"
         self.q_tables = {}
-        # Track Q-value deltas over time
-        self.q_value_changes_per_round = []  
-
-  
-
+        self.q_value_changes_per_round = []
 
     def process_round_history_for_q_values(self, round_history_output, learning_rate=0.1, discount_factor=0.9):
         delta_sum = 0.0
         delta_count = 0
 
         for player_index, hand_index, hand_history, outcome, dealer_face_up_card in round_history_output:
-            dealer_info = (dealer_face_up_card.value, dealer_face_up_card.suit.name)
-
             if player_index not in self.q_tables:
                 self.q_tables[player_index] = {}
 
             q_table = self.q_tables[player_index]
 
             for i, (cards, stake, action) in enumerate(hand_history):
-                player_possible_values = self.get_possible_values_from_cards(cards)
-                state = (tuple(sorted(player_possible_values)), dealer_face_up_card.value)
+                state = (tuple(sorted(self.get_possible_values_from_cards(cards))), dealer_face_up_card.value)
                 action_key = action
 
+                # Reward scheme
                 if outcome == "WIN":
                     reward = stake if i == len(hand_history) - 1 else 0.5 * stake
                 elif outcome == "LOSE":
@@ -46,15 +40,16 @@ class QAgent:
                 if (state, action_key) not in q_table:
                     q_table[(state, action_key)] = 0.0
 
+                # Estimate future Q
                 if i + 1 < len(hand_history):
                     next_cards, _, _ = hand_history[i + 1]
-                    next_hand_repr = tuple(sorted((card.value, card.suit.name) for card in next_cards))
-                    next_state = (next_hand_repr, dealer_info)
-                    future_qs = [q_table.get((next_state, a), 0.0) for a in [0, 1, 2, 3, 4]]
+                    next_state = (tuple(sorted(self.get_possible_values_from_cards(next_cards))), dealer_face_up_card.value)
+                    future_qs = [q_table.get((next_state, a), 0.0) for a in range(5)]
                     max_future_q = max(future_qs)
                 else:
                     max_future_q = 0.0
 
+                # Q-learning update
                 old_q = q_table[(state, action_key)]
                 new_q = old_q + learning_rate * (reward + discount_factor * max_future_q - old_q)
                 q_table[(state, action_key)] = new_q
@@ -66,6 +61,25 @@ class QAgent:
         if delta_count > 0:
             avg_delta = delta_sum / delta_count
             self.q_value_changes_per_round.append(avg_delta)
+
+    def choose_action(self, player_index, player_hand, dealer_face_up_card, epsilon=0.1):
+        state = (tuple(sorted(self.get_possible_values_from_cards(player_hand.hand_cards))), dealer_face_up_card.value)
+
+        if player_index not in self.q_tables:
+            self.q_tables[player_index] = {}
+
+        q_table = self.q_tables[player_index]
+
+        valid_actions = self.get_valid_actions_from_cards(player_hand.hand_cards, dealer_face_up_card)
+        if not valid_actions:
+            return 0
+
+        if random.random() < epsilon:
+            return random.choice(valid_actions)
+
+        q_values = {action: q_table.get((state, action), 0.0) for action in valid_actions}
+        best_action = max(q_values, key=q_values.get)
+        return best_action
 
     def get_possible_values_from_cards(self, cards):
         total_values = [0]
@@ -85,27 +99,6 @@ class QAgent:
 
         return total_values
 
-    def choose_action(self, player_index, player_hand, dealer_face_up_card, epsilon=0.1):
-        dealer_info = (dealer_face_up_card.value, dealer_face_up_card.suit.name)
-        player_possible_values = self.get_possible_values_from_cards(player_hand.hand_cards)
-        state = (tuple(sorted(player_possible_values)), dealer_face_up_card.value)
-
-        if player_index not in self.q_tables:
-            self.q_tables[player_index] = {}
-
-        q_table = self.q_tables[player_index]
-
-        valid_actions = self.get_valid_actions_from_cards(player_hand.hand_cards, dealer_face_up_card)
-        if not valid_actions:
-            return 0
-
-        if random.random() < epsilon:
-            return random.choice(valid_actions)
-
-        q_values = {action: q_table.get((state, action), 0.0) for action in valid_actions}
-        best_action = max(q_values, key=q_values.get)
-        return best_action
-
     def get_valid_actions_from_cards(self, cards, dealer_card):
         valid_actions = [0, 1]
 
@@ -117,9 +110,8 @@ class QAgent:
             if val1 == val2:
                 valid_actions.append(3)
 
-        if dealer_card.value == 1:
-            if len(cards) < 3:
-                valid_actions.append(4)
+        if dealer_card.value == 1 and len(cards) < 3:
+            valid_actions.append(4)
 
         return valid_actions
 
@@ -133,13 +125,10 @@ class QAgent:
         for player_index, q_table in self.q_tables.items():
             print(f"\n# Q-Table for Player #{player_index + 1} #\n")
             for (state, action), q_value in q_table.items():
-                player_hand_repr, dealer_info = state
-                dealer_value, dealer_suit = dealer_info
+                player_hand_repr, dealer_value = state
                 action_label = action_names.get(action, f"UNKNOWN({action})")
 
-                player_hand_str = ', '.join(f"{val} of {suit}" for val, suit in player_hand_repr)
-                dealer_card_str = f"{dealer_value} of {dealer_suit}"
-
-                print(f"State -> Player Hand: [{player_hand_str}], Dealer: {dealer_card_str}")
+                player_hand_str = ', '.join(str(val) for val in player_hand_repr)
+                print(f"State -> Player Hand: [{player_hand_str}], Dealer: {dealer_value}")
                 print(f"  Action: {action_label} ({action})")
                 print(f"  Q-Value: {q_value:.4f}\n")

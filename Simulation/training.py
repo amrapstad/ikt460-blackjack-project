@@ -34,7 +34,7 @@ def save_q_tables_to_csv(q_learning_agent: QAgent):
 # Trains one q-agent (with or without mbve)
 # Number of players and q-agent position is given. Max 5 players. One optimal agent. Rest is random.
 # Returns the whole player setup: [agent_class, ...]
-def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rounds_to_simulate=1000000):
+def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=True, rounds_to_simulate=1000000):
     environment = Environment(deck_count=4, players=num_players)
 
     players = []
@@ -155,7 +155,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
 
 
 # Players is the whole player setup: [agent_class, ...]
-def plot_training_results(players, window_size=50):
+def plot_training_results(players, window_size=100):
     csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
     df = pd.read_csv(csv_path)
     max_round = df["Round"].max()
@@ -274,9 +274,7 @@ def plot_q_value_convergence(q_agent: QAgent, window_size=50):
     plt.savefig(path)
     plt.show()
 
-
-def plot_state_value_heatmap(q_agent: QAgent):
-    # Assuming state = ((player_value,), dealer_card), we reduce to 2D
+def plot_state_value_max_and_avg_heatmaps(q_agent: QAgent):
     q_values = defaultdict(list)
 
     for (state, action), q in q_agent.q_tables[0].items():
@@ -284,17 +282,77 @@ def plot_state_value_heatmap(q_agent: QAgent):
         dealer_card = state[1]
         q_values[(player_hand, dealer_card)].append(q)
 
+    # Compute both max and average Q-values
+    max_q_values = {(k[0], k[1]): max(v) for k, v in q_values.items()}
     avg_q_values = {(k[0], k[1]): sum(v) / len(v) for k, v in q_values.items()}
 
-    data = pd.DataFrame([{'Player': k[0], 'Dealer': k[1], 'Q': v} for k, v in avg_q_values.items()])
-    heatmap_data = data.pivot(index='Player', columns='Dealer', values='Q')
+    # Create dataframes
+    max_data = pd.DataFrame([{'Player': k[0], 'Dealer': k[1], 'Q': v} for k, v in max_q_values.items()])
+    avg_data = pd.DataFrame([{'Player': k[0], 'Dealer': k[1], 'Q': v} for k, v in avg_q_values.items()])
 
+    max_heatmap_data = max_data.pivot(index='Player', columns='Dealer', values='Q')
+    avg_heatmap_data = avg_data.pivot(index='Player', columns='Dealer', values='Q')
+
+    # Plot both heatmaps side by side
+    fig, axes = plt.subplots(1, 2, figsize=(18, 8), sharey=True)
+
+    sns.heatmap(max_heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5, ax=axes[0])
+    axes[0].set_title(f"Max Q-Value Heatmap - {q_agent.agent_name.upper()}")
+    axes[0].set_xlabel("Dealer Showing")
+    axes[0].set_ylabel("Player Hand Value")
+
+    sns.heatmap(avg_heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5, ax=axes[1])
+    axes[1].set_title(f"Avg Q-Value Heatmap - {q_agent.agent_name.upper()}")
+    axes[1].set_xlabel("Dealer Showing")
+    axes[1].set_ylabel("")
+
+    plt.tight_layout()
+    # Fixed path
+    path = os.path.join(Q_VALUE_DIR, f"state_value_heatmap_{q_agent.agent_name}.png")
+    plt.savefig(path)
+    plt.show()
+
+def plot_state_value_heatmaps(q_agent: QAgent):
+    q_values = defaultdict(list)
+
+    for (state, action), q in q_agent.q_tables[0].items():
+        player_hand = state[0][0] if state[0] else 0
+        dealer_card = state[1]
+        q_values[(player_hand, dealer_card)].append(q)
+
+    # Compute both max and average Q-values
+    max_q_values = {(k[0], k[1]): max(v) for k, v in q_values.items()}
+    avg_q_values = {(k[0], k[1]): sum(v) / len(v) for k, v in q_values.items()}
+
+    # Create dataframes
+    max_data = pd.DataFrame([{'Player': k[0], 'Dealer': k[1], 'Q': v} for k, v in max_q_values.items()])
+    avg_data = pd.DataFrame([{'Player': k[0], 'Dealer': k[1], 'Q': v} for k, v in avg_q_values.items()])
+
+    max_heatmap_data = max_data.pivot(index='Player', columns='Dealer', values='Q')
+    avg_heatmap_data = avg_data.pivot(index='Player', columns='Dealer', values='Q')
+
+    # Plot Max Q-Value heatmap
     plt.figure(figsize=(12, 8))
-    sns.heatmap(heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
+    sns.heatmap(max_heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
+    plt.title(f"State-Value Heatmap (Max Q-Value) - {q_agent.agent_name.upper()}")
+    plt.xlabel("Dealer Showing")
+    plt.ylabel("Player Hand Value")
+    plt.tight_layout()
+    # Fixed path
+    path = os.path.join(Q_VALUE_DIR, f"state_value_heatmap_max_{q_agent.agent_name}.png")
+    plt.savefig(path)
+    plt.show()
+
+    # Plot Avg Q-Value heatmap
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(avg_heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
     plt.title(f"State-Value Heatmap (Avg Q-Value) - {q_agent.agent_name.upper()}")
     plt.xlabel("Dealer Showing")
     plt.ylabel("Player Hand Value")
     plt.tight_layout()
-    path = os.path.join(Q_VALUE_DIR, f"state_value_heatmap_{q_agent.agent_name}.png")
+    # Fixed path
+    path = os.path.join(Q_VALUE_DIR, f"state_value_heatmap_avg_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
+
+
