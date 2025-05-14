@@ -60,6 +60,7 @@ if __name__ == "__main__":
 
     # Training results
     plot_training_results(q_learning_result)
+    plot_action_distribution(q_learning_result)
     plot_state_value_heatmap(q_learning_agent)
     plot_q_value_convergence(q_learning_agent, window_size=100)
 
@@ -68,8 +69,7 @@ if __name__ == "__main__":
     run_evaluation(eval_players, num_games=1000)
     plot_evaluation_results(eval_players)
 
-    # Win/Loss Distribution of Stakes
+    # Training vs. Evaluation action distribution
     plot_return_distributions(eval_players)
-    plot_action_distribution(eval_players)
 
     print("The end")
