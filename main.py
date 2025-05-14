@@ -51,9 +51,10 @@ if __name__ == "__main__":
     """
 
     # Q-agent training
-    q_learning_result = run_simulation_q_learning(num_players=3, q_agent_pos=0, rounds_to_simulate=10000)
+    current_pos = 0
+    q_learning_result = run_simulation_q_learning(num_players=4, q_agent_pos=current_pos, rounds_to_simulate=1000)
     plot_training_results(q_learning_result)
-    q_learning_agent = q_learning_result[0] # q_learning_result[q_agent_pos]
+    q_learning_agent = q_learning_result[current_pos] # q_learning_result[q_agent_pos]
 
     # MBVE Q-agent training
     # TODO: Train a q-agent with mbve
@@ -71,3 +72,9 @@ if __name__ == "__main__":
     plot_state_value_heatmap(q_learning_agent)
 
     print("The end")
+
+    # TODO:
+    # Fikse bug med at like agenter overwriter hverandre i evaluation plots
+    ## Løsning: I init, gi et tall som blir appenda til agent_label
+    # Fikse bug med action log i training (og evaluation)
+    ## Løsning spørre chat om å skrive om

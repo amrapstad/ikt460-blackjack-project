@@ -36,16 +36,28 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
     environment = Environment(deck_count=4, players=num_players)
 
     players = []
+
+    # Important players: The Q-agent, the optimal agent and the first random agent
+    # Contains the three indices for three important players
+    important_indices = []
+
     optimal_added = False
+    first_random_added = False
 
     for i in range(num_players):
         if q_agent_pos == i:
+            important_indices.append(i)
             players.append(MbveQAgent() if with_mbve else QAgent())
             continue
         if not optimal_added:
             optimal_added = True
+            important_indices.append(i)
             players.append(OptimalAgent())
             continue
+        if not first_random_added:
+            first_random_added = True
+            important_indices.append(i)
+
         players.append(RandomAgent())
 
     round_outcomes = []
@@ -71,6 +83,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
     for round_num in range(1, rounds_to_simulate + 1):
         print(f"\n=== Simulation Round {round_num} ===")
         round_finished = False
+        round_action_log = []
 
         while not round_finished:
             for player_index, player in enumerate(environment.game_manager.players):
@@ -80,30 +93,33 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
 
                     current_agent_label = players[player_index].agent_label
 
-                    if current_agent_label == "q-learning" or current_agent_label == "mbve-q-learning":
+                    if current_agent_label in ("q-learning", "mbve-q-learning"):
                         action = players[player_index].choose_action(
                             player_index, hand, environment.game_manager.dealer.face_up_card
                         )
-                    elif current_agent_label == "optimal" or current_agent_label == "random":
+                    elif current_agent_label in ("optimal", "random"):
                         action = players[player_index].choose_action(
                             hand, environment.game_manager.dealer.face_up_card
                         )
                     else:
-                        raise Exception(f"Algorithm not yet implemented for {players[player_index].agent_label}")
+                        raise Exception(f"Algorithm not yet implemented for {current_agent_label}")
+
+                    # Only store action log for important players
+                    if player_index in important_indices:
+                        round_action_log.append([round_num, player_index, hand_index, action])
 
                     round_history_output = environment.input(player_index, hand_index, action=action)
-                    action_log.append([round_num, player_index, hand_index, action])
 
                     if round_history_output:
                         print(">>> Round completed")
 
-                        # Q-table updates
+                        # Update Q-table if needed
                         q_agent_history = [entry for entry in round_history_output if entry[q_agent_pos] == 0]
                         if q_agent_history:
                             print(f"Updating Q-table for Q-agent")
                             players[q_agent_pos].process_round_history_for_q_values(q_agent_history)
 
-                        # Track outcomes
+                        # Outcomes
                         for p_idx, h_idx, hand_history, outcome, _ in round_history_output:
                             if not hand_history:
                                 continue
@@ -119,14 +135,20 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
                             cumulative_return[p_idx] += result
                             win_tracking[p_idx].append((round_num, cumulative_wins[p_idx]))
                             return_tracking[p_idx].append((round_num, cumulative_return[p_idx]))
-                            round_outcomes.append([round_num, p_idx, h_idx, outcome, result])
+
+                            # Only store outcomes for important players
+                            if p_idx in important_indices:
+                                round_outcomes.append([round_num, p_idx, h_idx, outcome, result])
 
                         round_finished = True
                         break
                 if round_finished:
                     break
 
-    # Save round outcomes
+        # Only now, after round is actually finished, append the collected actions
+        action_log.extend(round_action_log)
+
+    # Save round outcomes (important players only)
     csv_path = os.path.join(CSV_DIR, "round_outcomes.csv")
     with open(csv_path, mode="w", newline="") as file:
         writer = csv.writer(file)
@@ -136,7 +158,7 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, rou
     # Save the Q-table at the end of simulation
     save_q_tables_to_csv(players[q_agent_pos])
 
-    # Save action log to CSV
+    # Save action log to CSV (important players only)
     actions_csv = os.path.join(CSV_DIR, "actions.csv")
     with open(actions_csv, mode="w", newline="") as file:
         writer = csv.writer(file)
@@ -155,9 +177,21 @@ def plot_training_results(players, window_size=50):
     max_round = df["Round"].max()
     rounds = pd.Series(range(1, max_round + 1), name="Round")
 
+    # Retrieve important indices
+    first_random_retrieved = False
+    important_indices = []
+
+    for i, player in enumerate(players):
+        if isinstance(player, QAgent) or isinstance(player, OptimalAgent):
+            important_indices.append(i)
+        elif isinstance(player, RandomAgent) and not first_random_retrieved:
+            first_random_retrieved = True
+            important_indices.append(i)
+
     # Plot 1: Cumulative Wins
     plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
+    for player_id in important_indices:
+        player = players[player_id]
         df_wins = df[(df["Player"] == player_id) & (df["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Round").size().cumsum()
         wins_full = wins_cumulative.reindex(rounds).ffill().fillna(0).astype(int)
@@ -174,7 +208,8 @@ def plot_training_results(players, window_size=50):
 
     # Plot 2: Rolling Win Rate
     plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
+    for player_id in important_indices:
+        player = players[player_id]
         df_player = df[df["Player"] == player_id].copy()
         df_player["IsWin"] = (df_player["Outcome"] == "WIN").astype(int)
         win_series = df_player.groupby("Round")["IsWin"].sum().reindex(rounds, fill_value=0)
@@ -192,7 +227,8 @@ def plot_training_results(players, window_size=50):
 
     # Plot 3: Cumulative Returns
     plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
+    for player_id in important_indices:
+        player = players[player_id]
         df_player = df[df["Player"] == player_id]
         returns = df_player.groupby("Round")["Return"].sum().cumsum()
         returns_full = returns.reindex(rounds).ffill().fillna(0).astype(int)
@@ -209,7 +245,8 @@ def plot_training_results(players, window_size=50):
 
     # Plot 4: Rolling Returns
     plt.figure(figsize=(12, 6))
-    for player_id, player in enumerate(players):
+    for player_id in important_indices:
+        player = players[player_id]
         df_player = df[df["Player"] == player_id]
         return_series = df_player.groupby("Round")["Return"].sum().reindex(rounds, fill_value=0)
         rolling_returns = return_series.rolling(window=window_size, min_periods=1).mean()
