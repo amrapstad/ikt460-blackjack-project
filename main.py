@@ -52,24 +52,39 @@ if __name__ == "__main__":
 
     # Q-agent training
     current_pos = 0
-    q_learning_result = run_simulation_q_learning(num_players=4, q_agent_pos=current_pos, rounds_to_simulate=1000)
-    q_learning_agent = q_learning_result[current_pos] # q_learning_result[q_agent_pos]
+    q_learning_result = run_simulation_q_learning(num_players=4, q_agent_pos=current_pos, rounds_to_simulate=10000)
+    q_learning_agent = q_learning_result[current_pos]
 
-    # MBVE Q-agent training
-    # TODO: Train a q-agent with mbve
+    # MBVE-agent training
+    current_pos = 0
+    mbve_learning_result = run_simulation_q_learning(num_players=4, q_agent_pos=current_pos, with_mbve=True, rounds_to_simulate=10000)
+    mbve_learning_agent = mbve_learning_result[current_pos]
 
-    # Training results
-    plot_training_results(q_learning_result)
+    ########## Training results #########
+    ## Q-learning
+    plot_training_results(q_learning_result, window_size=500)
     plot_action_distribution(q_learning_result)
     plot_state_value_heatmaps(q_learning_agent)
-    plot_q_value_convergence(q_learning_agent, window_size=100)
+    plot_q_value_convergence(q_learning_agent, window_size=500)
+    ## MBVE
+    plot_training_results(mbve_learning_result, window_size=500)
+    plot_action_distribution(mbve_learning_result)
+    plot_state_value_heatmaps(mbve_learning_agent)
+    plot_q_value_convergence(mbve_learning_agent, window_size=500)
 
-    # Evaluation
-    eval_players = [q_learning_agent, OptimalAgent(), RandomAgent()]
+    ######## Evaluation Results ########
+    ## Evaluation Q-learning agent
+    eval_players = [mbve_learning_agent, q_learning_agent, OptimalAgent(), RandomAgent()]
     run_evaluation(eval_players, num_games=1000)
-    plot_evaluation_results(eval_players)
-
+    plot_evaluation_results(eval_players, window_size=100)
     # Training vs. Evaluation action distribution
+
+
+    ## Distribution
+    eval_players = [q_learning_agent, OptimalAgent(), RandomAgent()]
     plot_return_distributions(eval_players)
+    eval_players = [mbve_learning_agent, OptimalAgent(), RandomAgent()]
+    plot_return_distributions(eval_players)
+
 
     print("The end")
