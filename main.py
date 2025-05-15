@@ -4,59 +4,13 @@ from Simulation.evaluation import *
 from Agents.random_agent import RandomAgent
 from Agents.optimal_agent import OptimalAgent
 
-def print_environment_state_true(environment):
-    print("")
-    print("### Players ###")
-    for player_index, player in enumerate(environment.game_manager.players):  # Track player index
-        print(f'- Player {player_index + 1}')
-        for hand_index, hand in enumerate(player.hands):
-            print(f'    - Hand #{hand_index + 1}')
-            print(f'        STANDING: {hand.is_standing}')
-            for card in hand.hand_cards:
-                print(f'        {card.suit}, Value: {card.value}')
-            print(f'        Possible values: {hand.get_possible_values()}')
-            print(f'        Hand stake: {hand.stake}')
-    print('### Dealer ###')
-    for card in environment.game_manager.dealer.dealer_cards:
-        print(f'    {card.suit}, Value: {card.value}')
-    print(f'    Possible values: {environment.game_manager.dealer.get_possible_values()}')
-    print("### Overviews ###")
-    print(f'Total available cards: {len(environment.game_manager.available_cards)}\n')
-
-
-def print_environment_state_player_view(environment):
-    print("")
-    print("### Players ###")
-    for player_index, player in enumerate(environment.game_manager.players):  # Track player index
-        print(f'- Player {player_index + 1}')
-        for hand_index, hand in enumerate(player.hands):
-            print(f'    - Hand #{hand_index + 1}')
-            print(f'        STANDING: {hand.is_standing}')
-            for card in hand.hand_cards:
-                print(f'        {card.suit}, Value: {card.value}')
-            print(f'        Possible values: {hand.get_possible_values()}')
-            print(f'        Hand stake: {hand.stake}')
-    print('### Dealer ###')
-    card = environment.game_manager.dealer.face_up_card
-    print(f'    {card.suit}, Value: {card.value}')
-    print("### Overviews ###")
-    print(f'Total available cards: {len(environment.game_manager.available_cards)}')
-
-
 if __name__ == "__main__":
-    """
-    Example:
-        players = [q_learning_agent, OptimalAgent(), RandomAgent()]
-        Q-agent: players[0]
-    """
-
-    # Q-agent training
+    # --- Q-agent training ---
     current_pos = 0
-    q_learning_result = run_simulation_q_learning(num_players=4, q_agent_pos=current_pos, rounds_to_simulate=1000)
-    q_learning_agent = q_learning_result[current_pos] # q_learning_result[q_agent_pos]
+    current_rounds = 100000 # Number of rounds in training
 
-    # MBVE Q-agent training
-    # TODO: Train a q-agent with mbve
+    q_learning_result = run_simulation_q_learning(num_players=3, q_agent_pos=current_pos, rounds_to_simulate=current_rounds) # This trains a regular Q-agent
+    q_learning_agent = q_learning_result[current_pos] # q_learning_result[q_agent_pos]
 
     # Training results
     plot_training_results(q_learning_result)
@@ -64,12 +18,33 @@ if __name__ == "__main__":
     plot_state_value_heatmaps(q_learning_agent)
     plot_q_value_convergence(q_learning_agent, window_size=100)
 
-    # Evaluation
-    eval_players = [q_learning_agent, OptimalAgent(), RandomAgent()]
-    run_evaluation(eval_players, num_games=1000)
-    plot_evaluation_results(eval_players)
 
-    # Training vs. Evaluation action distribution
-    plot_return_distributions(eval_players)
+    # --- MBVE Q-agent training ---
+    mbve_learning_result = run_simulation_q_learning(num_players=3, q_agent_pos=current_pos, with_mbve=True, rounds_to_simulate=current_rounds) # This trains a MBVE Q-agent
+    mbve_learning_agent = mbve_learning_result[current_pos]
+
+    # Training results
+    plot_training_results(mbve_learning_result)
+    plot_action_distribution(mbve_learning_result)
+    plot_state_value_heatmaps(mbve_learning_agent)
+    plot_q_value_convergence(mbve_learning_agent, window_size=100)
+
+
+    # --- Varied position and player number ---
+    num_games_eval = 10000 # Number of rounds in evaluation
+
+    # Setup 1: 2 players (Q-agent vs. MBVE-agent)
+    eval_setup1 = [q_learning_agent, mbve_learning_agent]
+    setup_num = 0
+    run_evaluation(eval_setup1, eval_id=setup_num, num_games=num_games_eval)
+    plot_evaluation_results(eval_setup1, eval_id=setup_num, window_size=100)
+    plot_return_distributions(eval_setup1, eval_id=setup_num, train_id=0)
+
+    # Setup 2: 5 players (Q-agent - Optimal - Random - Random - MBVE-agent)
+    eval_setup2 = [q_learning_agent, RandomAgent(), OptimalAgent(), RandomAgent(1), mbve_learning_agent]
+    setup_num = 1
+    run_evaluation(eval_setup2, eval_id=setup_num, num_games=num_games_eval)
+    plot_evaluation_results(eval_setup2, eval_id=setup_num, window_size=100)
+    plot_return_distributions(eval_setup2, eval_id=setup_num, train_id=0)
 
     print("The end")
