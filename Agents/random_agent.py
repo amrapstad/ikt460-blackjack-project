@@ -1,9 +1,11 @@
 import random
 
 class RandomAgent:
-    def __init__(self, agent_id="0"):
+    def __init__(self, agent_id=0):
         self.agent_label = "random"
+        self.agent_id = agent_id
         self.agent_name = f"{self.agent_label}_{agent_id}"
+        self.agent_color = ["pink", "violet", "cyan", "limegreen"]
 
     def choose_action(self, player_hand, dealer_face_up_card):
         return self.get_random_valid_action(player_hand.hand_cards, dealer_face_up_card)

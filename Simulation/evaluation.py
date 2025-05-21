@@ -83,7 +83,8 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
         df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Game").size().cumsum()
         wins_full = wins_cumulative.reindex(games).ffill().fillna(0).astype(int)
-        plt.plot(games, wins_full, label=f"{player.agent_name.upper()} Wins")
+        plt.plot(games, wins_full, label=f"{player.agent_name.upper()} Wins", color=player.agent_color[player.agent_id])
+
 
     plt.xlabel("Game")
     plt.ylabel("Cumulative Wins")
@@ -101,7 +102,7 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
         df_player["IsWin"] = (df_player["Outcome"] == "WIN").astype(int)
         win_series = df_player.groupby("Game")["IsWin"].sum().reindex(games, fill_value=0)
         rolling_win_rate = win_series.rolling(window=window_size, min_periods=1).mean()
-        plt.plot(games, rolling_win_rate, label=f"{player.agent_name.upper()} Win Rate")
+        plt.plot(games, rolling_win_rate, label=f"{player.agent_name.upper()} Win Rate", color=player.agent_color[player.agent_id])
 
     plt.xlabel("Game")
     plt.ylabel(f"Win Rate (rolling window={window_size})")
@@ -118,7 +119,7 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
         df_player = df_eval[df_eval["Player"] == player_id]
         returns = df_player.groupby("Game")["Return"].sum().cumsum()
         returns_full = returns.reindex(games).ffill().fillna(0).astype(int)
-        plt.plot(games, returns_full, label=f"{player.agent_name.upper()} Return", linestyle="--")
+        plt.plot(games, returns_full, label=f"{player.agent_name.upper()} Return", linestyle="--", color=player.agent_color[player.agent_id])
 
     plt.xlabel("Game")
     plt.ylabel("Cumulative Return")
@@ -135,7 +136,7 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
         df_player = df_eval[df_eval["Player"] == player_id]
         return_series = df_player.groupby("Game")["Return"].sum().reindex(games, fill_value=0)
         rolling_returns = return_series.rolling(window=window_size, min_periods=1).mean()
-        plt.plot(games, rolling_returns, label=f"{player.agent_name.upper()} Rolling Return")
+        plt.plot(games, rolling_returns, label=f"{player.agent_name.upper()} Rolling Return", color=player.agent_color[player.agent_id])
 
     plt.xlabel("Game")
     plt.ylabel(f"Avg Return (rolling window={window_size})")
