@@ -35,14 +35,15 @@ if __name__ == "__main__":
     # --- Varied position and player number ---
     num_games_eval = 50000 # Number of rounds in evaluation
 
-    """
     # 2 players (Q-agent vs. MBVE-agent)
     eval_setup1 = [q_learning_agent, mbve_learning_agent]
     setup_num = 0
     run_evaluation(eval_setup1, eval_id=setup_num, num_games=num_games_eval)
-    plot_evaluation_results(eval_setup1, eval_id=setup_num, window_size=500)
+    plot_evaluation_results(eval_setup1, eval_id=setup_num, window_size=int(num_games_eval*0.01))
     plot_return_distributions(eval_setup1, eval_id=setup_num, train_id=0)
-    """
+
+    # Wait for user input before proceeding
+    input("Press key to proceed...")
 
     # 7 players (Q-agent first)
     eval_setup2 = [q_learning_agent,
