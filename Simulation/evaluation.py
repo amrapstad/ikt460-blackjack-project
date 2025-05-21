@@ -14,7 +14,7 @@ def run_evaluation(players, eval_id=0, num_games=10000):
     print(f"\n🔍 Running evaluation over {num_games} games...")
 
     player_count = len(players)
-    environment = Environment(deck_count=4, players=player_count)
+    environment = Environment(deck_count=8, players=player_count)
 
     results = []
 
@@ -83,8 +83,10 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
         df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
         wins_cumulative = df_wins.groupby("Game").size().cumsum()
         wins_full = wins_cumulative.reindex(games).ffill().fillna(0).astype(int)
-        plt.plot(games, wins_full, label=f"{player.agent_name.upper()} Wins")
-
+        final_wins = wins_full.iloc[-1]
+        avg_wins = final_wins / max_game
+        label = f"{player.agent_name.upper()} Wins\n(Total: {final_wins}, Avg: {avg_wins:.2f}/game)"
+        plt.plot(games, wins_full, label=label)
     plt.xlabel("Game")
     plt.ylabel("Cumulative Wins")
     plt.title("Evaluation: Cumulative Wins Over Games")
@@ -93,16 +95,18 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
     plt.tight_layout()
     plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_cumulative_wins_id{eval_id}.png"))
     plt.show()
+    plt.close()
 
     # Plot 2: Rolling Win Rate
     plt.figure(figsize=(12, 6))
     for player_id, player in enumerate(players):
-        df_player = df_eval[df_eval["Player"] == player_id].copy()
-        df_player["IsWin"] = (df_player["Outcome"] == "WIN").astype(int)
-        win_series = df_player.groupby("Game")["IsWin"].sum().reindex(games, fill_value=0)
-        rolling_win_rate = win_series.rolling(window=window_size, min_periods=1).mean()
-        plt.plot(games, rolling_win_rate, label=f"{player.agent_name.upper()} Win Rate")
-
+        df_wins = df_eval[(df_eval["Player"] == player_id) & (df_eval["Outcome"] == "WIN")]
+        wins_cumulative = df_wins.groupby("Game").size().cumsum()
+        wins_full = wins_cumulative.reindex(games).ffill().fillna(0).astype(int)
+        final_wins = wins_full.iloc[-1]
+        avg_wins = final_wins / max_game
+        label = f"{player.agent_name.upper()} Wins\n(Total: {final_wins}, Avg: {avg_wins:.2f}/game)"
+        plt.plot(games, wins_full, label=label)
     plt.xlabel("Game")
     plt.ylabel(f"Win Rate (rolling window={window_size})")
     plt.title(f"Evaluation: Rolling Win Rate Over {window_size} Games")
@@ -111,6 +115,7 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
     plt.tight_layout()
     plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_win_rate_id{eval_id}.png"))
     plt.show()
+    plt.close()
 
     # Plot 3: Cumulative Returns
     plt.figure(figsize=(12, 6))
@@ -118,8 +123,10 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
         df_player = df_eval[df_eval["Player"] == player_id]
         returns = df_player.groupby("Game")["Return"].sum().cumsum()
         returns_full = returns.reindex(games).ffill().fillna(0).astype(int)
-        plt.plot(games, returns_full, label=f"{player.agent_name.upper()} Return", linestyle="--")
-
+        final_return = returns_full.iloc[-1]
+        avg_return = final_return / max_game
+        label = f"{player.agent_name.upper()} Return\n(Total: {final_return}, Avg: {avg_return:.2f}/game)"
+        plt.plot(games, returns_full, label=label, linestyle="--")
     plt.xlabel("Game")
     plt.ylabel("Cumulative Return")
     plt.title("Evaluation: Cumulative Return Over Games")
@@ -128,6 +135,7 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
     plt.tight_layout()
     plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_cumulative_returns_id{eval_id}.png"))
     plt.show()
+    plt.close()
 
     # Plot 4: Rolling Returns
     plt.figure(figsize=(12, 6))
@@ -145,6 +153,7 @@ def plot_evaluation_results(players, eval_id=0, window_size=50):
     plt.tight_layout()
     plt.savefig(os.path.join(EVALUATION_DIR, f"evaluation_rolling_returns_id{eval_id}.png"))
     plt.show()
+    plt.close()
 
 
 # Players is the whole player setup: [agent_class, ...]
@@ -214,3 +223,4 @@ def plot_return_distributions(players, eval_id=0, train_id=0):
         plots_path = os.path.join(EVALUATION_DIR, filename)
         plt.savefig(plots_path)
         plt.show()
+        plt.close()

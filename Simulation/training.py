@@ -35,7 +35,8 @@ def save_q_tables_to_csv(q_agent: QAgent, train_id):
 # Number of players and q-agent position is given. Max 5 players. One optimal agent. Rest is random.
 # Returns the whole player setup: [agent_class, ...]
 def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, train_id=0, rounds_to_simulate=1000000):
-    environment = Environment(deck_count=4, players=num_players)
+
+    environment = Environment(deck_count=8, players=num_players)
 
     players = []
     important_indices = []
@@ -64,6 +65,9 @@ def run_simulation_q_learning(num_players=3, q_agent_pos=0, with_mbve=False, tra
     win_tracking = {i: [] for i in range(num_players)}
     cumulative_wins = {i: 0 for i in range(num_players)}
     action_log = []
+
+    if (rounds_to_simulate == 0):
+        return players
 
     for round_num in range(1, rounds_to_simulate + 1):
         print(f"\n=== Simulation Round {round_num} ===")
@@ -160,6 +164,8 @@ def plot_training_results(players, train_id=0, window_size=100):
     q_agent = next((x for x in players if isinstance(x, QAgent)), None)
     
     csv_path = os.path.join(CSV_DIR, f"round_outcomes_id{train_id}_{q_agent.agent_name}.csv")
+    if not os.path.exists(csv_path):
+        return None
     df = pd.read_csv(csv_path)
     max_round = df["Round"].max()
     rounds = pd.Series(range(1, max_round + 1), name="Round")
@@ -192,6 +198,7 @@ def plot_training_results(players, train_id=0, window_size=100):
     plt.tight_layout()
     plt.savefig(os.path.join(TRAINING_DIR, f"training_cumulative_wins_id{train_id}_{q_agent.agent_name}.png"))
     plt.show()
+    plt.close()
 
     # Plot 2: Rolling Win Rate
     plt.figure(figsize=(12, 6))
@@ -211,6 +218,7 @@ def plot_training_results(players, train_id=0, window_size=100):
     plt.tight_layout()
     plt.savefig(os.path.join(TRAINING_DIR, f"training_win_rate_id{train_id}_{q_agent.agent_name}.png"))
     plt.show()
+    plt.close()
 
     # Plot 3: Cumulative Returns
     plt.figure(figsize=(12, 6))
@@ -229,6 +237,7 @@ def plot_training_results(players, train_id=0, window_size=100):
     plt.tight_layout()
     plt.savefig(os.path.join(TRAINING_DIR, f"training_cumulative_returns_id{train_id}_{q_agent.agent_name}.png"))
     plt.show()
+    plt.close()
 
     # Plot 4: Rolling Returns
     plt.figure(figsize=(12, 6))
@@ -247,6 +256,7 @@ def plot_training_results(players, train_id=0, window_size=100):
     plt.tight_layout()
     plt.savefig(os.path.join(TRAINING_DIR, f"training_rolling_returns_id{train_id}_{q_agent.agent_name}.png"))
     plt.show()
+    plt.close()
 
 
 def plot_q_value_convergence(q_agent: QAgent, train_id=0, window_size=50):
@@ -274,6 +284,7 @@ def plot_q_value_convergence(q_agent: QAgent, train_id=0, window_size=50):
     path = os.path.join(TRAINING_DIR, f"q_value_convergence_id{train_id}_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
+    plt.close()
 
 def plot_state_value_max_and_avg_heatmaps(q_agent: QAgent, train_id=0):
     q_values = defaultdict(list)
@@ -312,8 +323,11 @@ def plot_state_value_max_and_avg_heatmaps(q_agent: QAgent, train_id=0):
     path = os.path.join(TRAINING_DIR, f"state_value_heatmap_id{train_id}_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
+    plt.close()
 
 def plot_state_value_heatmaps(q_agent: QAgent, train_id=0):
+    if not q_agent.q_tables or 0 not in q_agent.q_tables or not q_agent.q_tables[0]:
+        return None
     q_values = defaultdict(list)
 
     for (state, action), q in q_agent.q_tables[0].items():
@@ -343,6 +357,7 @@ def plot_state_value_heatmaps(q_agent: QAgent, train_id=0):
     path = os.path.join(TRAINING_DIR, f"state_value_heatmap_max_id{train_id}_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
+    plt.close()
 
     # Plot Avg Q-Value heatmap
     plt.figure(figsize=(12, 8))
@@ -355,6 +370,7 @@ def plot_state_value_heatmaps(q_agent: QAgent, train_id=0):
     path = os.path.join(TRAINING_DIR, f"state_value_heatmap_id{train_id}_{q_agent.agent_name}.png")
     plt.savefig(path)
     plt.show()
+    plt.close()
 
 
 # Players is the whole player setup: [agent_class, ...]
@@ -362,6 +378,8 @@ def plot_action_distribution(players, train_id=0):
     q_agent = next((x for x in players if isinstance(x, QAgent)), None)
 
     csv_path = os.path.join(CSV_DIR, f"actions_id{train_id}_{q_agent.agent_name}.csv")
+    if not os.path.exists(csv_path):
+        return None
     df = pd.read_csv(csv_path)
 
     action_labels = {0: "Stand", 1: "Hit", 2: "Double", 3: "Split", 4: "Insurance"}
@@ -381,3 +399,4 @@ def plot_action_distribution(players, train_id=0):
     plots_path = os.path.join(TRAINING_DIR, f"action_distribution_id{train_id}_{q_agent.agent_name}.png")
     plt.savefig(plots_path)
     plt.show()
+    plt.close()

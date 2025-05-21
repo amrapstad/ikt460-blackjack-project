@@ -10,7 +10,7 @@ class QAgent:
         self.q_value_changes_per_round = []  
         self.training_index = -1
 
-    def process_round_history_for_q_values(self, round_history_output, learning_rate=0.1, discount_factor=0.9):
+    def process_round_history_for_q_values(self, round_history_output, learning_rate=0.05, discount_factor=0.1):
         delta_sum = 0.0
         delta_count = 0
 
